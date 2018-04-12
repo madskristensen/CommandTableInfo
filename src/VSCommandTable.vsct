@@ -1,0 +1,35 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<CommandTable xmlns="http://schemas.microsoft.com/VisualStudio/2005-10-18/CommandTable" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+  <Extern href="stdidcmd.h"/>
+  <Extern href="vsshlids.h"/>
+  <Include href="KnownImageIds.vsct"/>
+
+  <Commands package="guidCommandTablePackage">
+    <Groups>
+      <Group guid="guidCommandTablePackageCmdSet" id="MyMenuGroup" priority="0x0600">
+        <Parent guid="guidSHLMainMenu" id="IDM_VS_MENU_TOOLS"/>
+      </Group>
+    </Groups>
+
+    <Buttons>
+      <Button guid="guidCommandTablePackageCmdSet" id="EnableInfoCommandId" priority="0x0100" type="Button">
+        <Parent guid="guidCommandTablePackageCmdSet" id="MyMenuGroup" />
+        <Icon guid="ImageCatalogGuid" id="CommandUIOption" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <Strings>
+          <ButtonText>Show Command Information</ButtonText>
+        </Strings>
+      </Button>
+    </Buttons>
+  </Commands>
+
+  <Symbols>
+    <GuidSymbol name="guidCommandTablePackage" value="{82d76b14-dcc0-423c-8b05-bac944909ebd}" />
+
+    <GuidSymbol name="guidCommandTablePackageCmdSet" value="{a5bb06f5-7f0a-4194-b06f-0bb25d48f268}">
+      <IDSymbol name="MyMenuGroup" value="0x1020" />
+      <IDSymbol name="EnableInfoCommandId" value="0x0100" />
+    </GuidSymbol>
+  </Symbols>
+</CommandTable>
