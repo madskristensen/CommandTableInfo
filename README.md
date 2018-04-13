@@ -9,7 +9,7 @@ Click on **Tools -> Show Command Information** to enable the command information
 
 ![Tools menu](art/tools-menu.png)
 
-Once enabled, you can now CTRL+Shift+Left-Click any command in any menu or toolbar to see the information about it's GUIDs, IDs and groups and menu hierarchy.
+Once enabled, you can now **CTRL+Shift+Left-Click** any command in any menu or toolbar to see the information about it's GUIDs, IDs and groups and menu hierarchy.
 
 ## License
 [Apache 2.0](LICENSE) 
