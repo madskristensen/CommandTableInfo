@@ -1,4 +1,7 @@
 # VSCT info extension
+
+[![Build status](https://ci.appveyor.com/api/projects/status/k6un4vkn3ud7a16d?svg=true)](https://ci.appveyor.com/project/madskristensen/commandtableinfo)
+
 This extension shows the group and menu identifiers of existing commands to make it easy to find out where to place your custom commands.
 
 ## Using the feature
