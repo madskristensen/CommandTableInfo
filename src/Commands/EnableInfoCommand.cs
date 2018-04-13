@@ -1,29 +1,29 @@
 ﻿using System;
 using System.ComponentModel.Design;
-using System.Globalization;
-using System.Threading;
-using System.Threading.Tasks;
+using System.Linq;
+using System.Windows.Input;
+using CommandTable;
+using EnvDTE;
+using EnvDTE80;
 using Microsoft.VisualStudio.Shell;
-using Microsoft.VisualStudio.Shell.Interop;
 using Task = System.Threading.Tasks.Task;
 
 namespace CommandTableInfo
 {
     internal sealed class EnableInfoCommand
     {
-        public const int CommandId = 0x0100;
+        private readonly AsyncPackage _package;
+        private CommandEvents _cmdEvents;
 
-        public static readonly Guid CommandSet = new Guid("a5bb06f5-7f0a-4194-b06f-0bb25d48f268");
-
-        private readonly AsyncPackage package;
-
-        private EnableInfoCommand(AsyncPackage package, OleMenuCommandService commandService)
+        private EnableInfoCommand(AsyncPackage package, OleMenuCommandService commandService, DTE2 dte)
         {
-            this.package = package ?? throw new ArgumentNullException(nameof(package));
+            _package = package ?? throw new ArgumentNullException(nameof(package));
+            _cmdEvents = dte.Events.CommandEvents;
             commandService = commandService ?? throw new ArgumentNullException(nameof(commandService));
 
-            var menuCommandID = new CommandID(CommandSet, CommandId);
-            var menuItem = new MenuCommand(this.Execute, menuCommandID);
+            var menuCommandID = new CommandID(PackageGuids.guidCommandTablePackageCmdSet, PackageIds.EnableInfoCommandId);
+            var menuItem = new OleMenuCommand(Execute, menuCommandID);
+            menuItem.BeforeQueryStatus += BeforeQueryStatus;
             commandService.AddCommand(menuItem);
         }
 
@@ -33,11 +33,23 @@ namespace CommandTableInfo
             private set;
         }
 
-        private Microsoft.VisualStudio.Shell.IAsyncServiceProvider ServiceProvider
+        public bool IsEnabled
+        {
+            get;
+            private set;
+        }
+
+        public ICommandTable CommandTable
+        {
+            get;
+            private set;
+        }
+
+        private IAsyncServiceProvider ServiceProvider
         {
             get
             {
-                return this.package;
+                return _package;
             }
         }
 
@@ -45,23 +57,56 @@ namespace CommandTableInfo
         {
             ThreadHelper.ThrowIfNotOnUIThread();
 
-            OleMenuCommandService commandService = await package.GetServiceAsync((typeof(IMenuCommandService))) as OleMenuCommandService;
-            Instance = new EnableInfoCommand(package, commandService);
+            var commandService = await package.GetServiceAsync((typeof(IMenuCommandService))) as OleMenuCommandService;
+            var dte = await package.GetServiceAsync(typeof(DTE)) as DTE2;
+
+            Instance = new EnableInfoCommand(package, commandService, dte);
+        }
+
+        private void BeforeQueryStatus(object sender, EventArgs e)
+        {
+            var button = (OleMenuCommand)sender;
+            button.Checked = IsEnabled;
         }
 
         private void Execute(object sender, EventArgs e)
         {
-            ThreadHelper.ThrowIfNotOnUIThread();
-            string message = string.Format(CultureInfo.CurrentCulture, "Inside {0}.MenuItemCallback()", this.GetType().FullName);
-            string title = "EnableInfoCommand";
+            IsEnabled = !IsEnabled;
 
-            VsShellUtilities.ShowMessageBox(
-                this.package,
-                message,
-                title,
-                OLEMSGICON.OLEMSGICON_INFO,
-                OLEMSGBUTTON.OLEMSGBUTTON_OK,
-                OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST);
+            if (IsEnabled)
+            {
+                _cmdEvents.BeforeExecute += CommandEvents_BeforeExecute;
+
+                if (CommandTable == null)
+                {
+                    var factory = new CommandTableFactory();
+                    CommandTable = factory.CreateCommandTableFromHost(_package, HostLoadType.FromRegisteredMenuDlls);
+                }
+            }
+            else
+            {
+                _cmdEvents.BeforeExecute -= CommandEvents_BeforeExecute;
+            }
+        }
+
+        private void CommandEvents_BeforeExecute(string Guid, int ID, object CustomIn, object CustomOut, ref bool CancelDefault)
+        {
+            if (IsEnabled && CommandTable != null)
+            {
+                if ((Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift)) &&
+                    (Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl)))
+                {
+                    CancelDefault = true;
+                    ThreadHelper.JoinableTaskFactory.Run(() => ShowInfoAsync(new Guid(Guid), ID));
+                }
+            }
+        }
+
+        private async Task ShowInfoAsync(Guid guid, int id)
+        {
+            var commands = await CommandTable.GetCommands();
+            CommandTable.Command command = commands.FirstOrDefault(c => c.ItemId.Guid == guid);
+            System.Diagnostics.Debug.Write(command);
         }
     }
 }

@@ -15,8 +15,6 @@
     <Buttons>
       <Button guid="guidCommandTablePackageCmdSet" id="EnableInfoCommandId" priority="0x0100" type="Button">
         <Parent guid="guidCommandTablePackageCmdSet" id="MyMenuGroup" />
-        <Icon guid="ImageCatalogGuid" id="CommandUIOption" />
-        <CommandFlag>IconIsMoniker</CommandFlag>
         <Strings>
           <ButtonText>Show Command Information</ButtonText>
         </Strings>
