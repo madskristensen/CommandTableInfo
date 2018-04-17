@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.Design;
 using System.Linq;
 using System.Windows.Input;
@@ -104,8 +105,8 @@ namespace CommandTableInfo
 
         private async Task ShowInfoAsync(Guid guid, int id)
         {
-            var commands = await CommandTable.GetCommands();
-            CommandTable.Command command = commands.FirstOrDefault(c => c.ItemId.Guid == guid);
+            IEnumerable<CommandTable.Command> commands = await CommandTable.GetCommands();
+            CommandTable.Command command = commands.FirstOrDefault(c => c.ItemId.Guid == guid && c.ItemId.DWord == id);
             System.Diagnostics.Debug.Write(command);
         }
     }

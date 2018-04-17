@@ -183,6 +183,11 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="..\lib\Microsoft.VisualStudio.CommandTable.Compression.10.0.dll">
+      <Link>Microsoft.VisualStudio.CommandTable.Compression.10.0.dll</Link>
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <VSIXSubPath>.</VSIXSubPath>
+    </Content>
     <Content Include="Resources\Icon.png" />
     <Content Include="source.extension.ico">
       <DependentUpon>source.extension.vsixmanifest</DependentUpon>
