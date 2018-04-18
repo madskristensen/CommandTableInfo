@@ -19,6 +19,15 @@
           <ButtonText>Show Command Information</ButtonText>
         </Strings>
       </Button>
+
+      <Button guid="guidCommandTablePackageCmdSet" id="ShowToolWindowId" priority="0x0101" type="Button">
+        <Parent guid="guidSHLMainMenu" id="IDG_VS_WNDO_OTRWNDWS1"/>
+        <Icon guid="ImageCatalogGuid" id="CommandUIOption"/>
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <Strings>
+          <ButtonText>Command Explorer</ButtonText>
+        </Strings>
+      </Button>
     </Buttons>
   </Commands>
 
@@ -28,6 +37,7 @@
     <GuidSymbol name="guidCommandTablePackageCmdSet" value="{a5bb06f5-7f0a-4194-b06f-0bb25d48f268}">
       <IDSymbol name="MyMenuGroup" value="0x1020" />
       <IDSymbol name="EnableInfoCommandId" value="0x0100" />
+      <IDSymbol name="ShowToolWindowId" value="0x0200" />
     </GuidSymbol>
   </Symbols>
 </CommandTable>

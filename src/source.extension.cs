@@ -9,10 +9,10 @@ namespace CommandTableInfo
     {
         public const string Id = "1a973c52-a674-48d8-a276-65ddab1ac598";
         public const string Name = "Command Table Info";
-        public const string Description = @"Empty VSIX Project.";
+        public const string Description = @"Provides a tool window to explorer all commands, groups and menus to help extension authors place commands/buttons in the desired location";
         public const string Language = "en-US";
         public const string Version = "1.0";
         public const string Author = "Mads Kristensen";
-        public const string Tags = "";
+        public const string Tags = "vsix, commands, groups, menus";
     }
 }
