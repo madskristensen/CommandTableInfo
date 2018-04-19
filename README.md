@@ -1,4 +1,4 @@
-# VSCT info extension
+# Command Explorer 
 
 [![Build status](https://ci.appveyor.com/api/projects/status/k6un4vkn3ud7a16d?svg=true)](https://ci.appveyor.com/project/madskristensen/commandtableinfo)
 
