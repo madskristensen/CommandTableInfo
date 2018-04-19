@@ -4,17 +4,10 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:CommandTableInfo.ToolWindows"
-             xmlns:imaging="clr-namespace:Microsoft.VisualStudio.Imaging;assembly=Microsoft.VisualStudio.Imaging"  
-             xmlns:theming="clr-namespace:Microsoft.VisualStudio.PlatformUI;assembly=Microsoft.VisualStudio.Imaging" 
-             xmlns:catalog="clr-namespace:Microsoft.VisualStudio.Imaging;assembly=Microsoft.VisualStudio.ImageCatalog"  
-             xmlns:util="clr-namespace:Microsoft.VisualStudio.PlatformUI;assembly=Microsoft.VisualStudio.Utilities"
              mc:Ignorable="d" 
              local:VsTheme.UseVsTheme="true"
              d:DesignHeight="450" d:DesignWidth="800">
     <Grid>
-        <Grid.Resources>
-            <util:BrushToColorConverter x:Key="BrushToColorConverter"/>
-        </Grid.Resources>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="350"/>
             <ColumnDefinition Width="5"/>
@@ -34,7 +27,7 @@
                 </Grid.ColumnDefinitions>
 
                 <TextBox Name="txtFilter" Grid.Column="0" Margin="5, 5, 5, 5" Height="25" TextWrapping="Wrap" TextChanged="TextBox_TextChanged"/>
-                <CheckBox Grid.Column="1" 
+                <CheckBox Name="cbInspect" Grid.Column="1" 
                           Content="Inspect mode"
                           VerticalContentAlignment="Center" VerticalAlignment="Center" 
                           Margin="10 0 10 0"
@@ -58,97 +51,99 @@
 
         <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch" />
 
-        <Grid Name="details" Margin="10" Grid.Column="2">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
+        <ScrollViewer VerticalScrollBarVisibility="Auto" Grid.Column="2">
+            <Grid Name="details" Margin="10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
 
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition />
-            </Grid.RowDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition />
+                </Grid.RowDefinitions>
 
-            <Label Content="Name.Of.Command" Name="txtName" FontWeight="Bold" Grid.Row="0" />
+                <Label Content="Name.Of.Command" Name="txtName" FontWeight="Bold" Grid.Row="0" />
 
-            <WrapPanel Orientation="Vertical" ScrollViewer.HorizontalScrollBarVisibility="Disabled" Grid.Column="0" Grid.Row="1" Grid.ColumnSpan="2">
+                <WrapPanel Orientation="Vertical" ScrollViewer.HorizontalScrollBarVisibility="Disabled" Grid.Column="0" Grid.Row="1" Grid.ColumnSpan="2">
 
-                <StackPanel Orientation="Horizontal" Margin="10 0 0 0">
-                    <Label Content="Guid" Width="100" />
-                    <TextBox Text="n/a" Name="txtGuid" IsReadOnly="True" Background="Transparent" BorderThickness="0" VerticalAlignment="Center" Margin="0 0 20 0" />
+                    <StackPanel Orientation="Horizontal" Margin="10 0 0 0">
+                        <Label Content="Guid" Width="100" />
+                        <TextBox Text="n/a" Name="txtGuid" IsReadOnly="True" Background="Transparent" BorderThickness="0" VerticalAlignment="Center" Margin="0 0 20 0" />
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Margin="10 0 0 0">
+                        <Label Content="ID" Width="100" />
+                        <TextBox Text="n/a" Name="txtId" IsReadOnly="True" Background="Transparent" BorderThickness="0" VerticalAlignment="Center" Margin="0 0 20 0" />
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Margin="10 0 0 0">
+                        <Label Content="Priority" Width="100" />
+                        <TextBox Text="loading..." Name="txtPriority" IsReadOnly="True" Background="Transparent" BorderThickness="0" VerticalAlignment="Center" Margin="0 0 20 0" />
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Margin="10 0 0 0">
+                        <Label Content="Key bindings" Width="100"/>
+                        <TextBox Name="txtBindings" Text="n/a" Background="Transparent" BorderThickness="0" TextWrapping="Wrap" VerticalAlignment="Center" Margin="0 0 20 0" />
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Margin="10 0 0 0">
+                        <Label Content="Package" Width="100" />
+                        <TextBox Text="loading..." Name="txtPackage" IsReadOnly="True" Background="Transparent" BorderThickness="0" VerticalAlignment="Center" Margin="0 0 20 0" />
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Margin="10 0 0 0">
+                        <Label Content="Assembly" Width="100" />
+                        <TextBox Text="loading..." Name="txtAssembly" IsReadOnly="True" Background="Transparent" BorderThickness="0" VerticalAlignment="Center" Margin="0 0 20 0" />
+                    </StackPanel>
+                </WrapPanel>
+
+                <StackPanel Orientation="Vertical" Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2">
+                    <Label Content="Groups" FontWeight="Bold" Margin="0, 10, 0, 0"/>
+                    <Label Name="loading" Content="loading..." Margin="10 0 0 0" />
+
+                    <TreeView Name="tree" Margin="0" BorderThickness="0">
+                        <TreeView.Resources>
+                            <Style TargetType="{x:Type local:CommandTreeItem}" BasedOn="{StaticResource {x:Type TreeViewItem}}"/>
+                        </TreeView.Resources>
+                    </TreeView>
                 </StackPanel>
 
-                <StackPanel Orientation="Horizontal" Margin="10 0 0 0">
-                    <Label Content="ID" Width="100" />
-                    <TextBox Text="n/a" Name="txtId" IsReadOnly="True" Background="Transparent" BorderThickness="0" VerticalAlignment="Center" Margin="0 0 20 0" />
+                <StackPanel Name="groupDetails" Orientation="Vertical" Grid.Row="2" Grid.Column="1" Margin="10 10 0 0">
+                    <Label Content="Details" FontWeight="Bold" />
+
+                    <StackPanel Orientation="Horizontal" Margin="10 0 0 0">
+                        <Label Content="Symbolic Guid" Width="100" />
+                        <TextBox Text="n/a" Name="txtPlacementSymbolicGuid" IsReadOnly="True" Background="Transparent" BorderThickness="0" VerticalAlignment="Center" />
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Margin="10 0 0 0">
+                        <Label Content="Symolic ID" Width="100" />
+                        <TextBox Text="n/a" Name="txtPlacementSymbolicId" IsReadOnly="True" Background="Transparent" BorderThickness="0" VerticalAlignment="Center" />
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Margin="10 0 0 0">
+                        <Label Content="Guid" Width="100" />
+                        <TextBox Text="n/a" Name="txtPlacementGuid" IsReadOnly="True" Background="Transparent" BorderThickness="0" VerticalAlignment="Center" />
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Margin="10 0 0 0">
+                        <Label Content="ID" Width="100" />
+                        <TextBox Text="n/a" Name="txtPlacementId" IsReadOnly="True" Background="Transparent" BorderThickness="0" VerticalAlignment="Center" />
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Margin="10 0 0 0">
+                        <Label Content="Priority" Width="100"/>
+                        <TextBox Name="txtPlacementPriority" Text="n/a" Background="Transparent" BorderThickness="0" VerticalAlignment="Center" />
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Margin="10 0 0 0">
+                        <Label Content="Type" Width="100"/>
+                        <TextBox Name="txtPlacementType" Text="n/a" Background="Transparent" BorderThickness="0" VerticalAlignment="Center" />
+                    </StackPanel>
                 </StackPanel>
-
-                <StackPanel Orientation="Horizontal" Margin="10 0 0 0">
-                    <Label Content="Priority" Width="100" />
-                    <TextBox Text="loading..." Name="txtPriority" IsReadOnly="True" Background="Transparent" BorderThickness="0" VerticalAlignment="Center" Margin="0 0 20 0" />
-                </StackPanel>
-
-                <StackPanel Orientation="Horizontal" Margin="10 0 0 0">
-                    <Label Content="Key bindings" Width="100"/>
-                    <TextBox Name="txtBindings" Text="n/a" Background="Transparent" BorderThickness="0" TextWrapping="Wrap" VerticalAlignment="Center" Margin="0 0 20 0" />
-                </StackPanel>
-
-                <StackPanel Orientation="Horizontal" Margin="10 0 0 0">
-                    <Label Content="Package" Width="100" />
-                    <TextBox Text="loading..." Name="txtPackage" IsReadOnly="True" Background="Transparent" BorderThickness="0" VerticalAlignment="Center" Margin="0 0 20 0" />
-                </StackPanel>
-
-                <StackPanel Orientation="Horizontal" Margin="10 0 0 0">
-                    <Label Content="Assembly" Width="100" />
-                    <TextBox Text="loading..." Name="txtAssembly" IsReadOnly="True" Background="Transparent" BorderThickness="0" VerticalAlignment="Center" Margin="0 0 20 0" />
-                </StackPanel>
-            </WrapPanel>
-
-            <StackPanel Orientation="Vertical" Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2">
-                <Label Content="Groups" FontWeight="Bold" Margin="0, 10, 0, 0"/>
-                <Label Name="loading" Content="loading..." Margin="10 0 0 0" />
-
-                <TreeView Name="tree" Margin="0" BorderThickness="0">
-                    <TreeView.Resources>
-                        <Style TargetType="{x:Type local:CommandTreeItem}" BasedOn="{StaticResource {x:Type TreeViewItem}}"/>
-                    </TreeView.Resources>
-                </TreeView>
-            </StackPanel>
-
-            <StackPanel Name="groupDetails" Orientation="Vertical" Grid.Row="2" Grid.Column="1" Margin="10 10 0 0">
-                <Label Content="Details" FontWeight="Bold" />
-
-                <StackPanel Orientation="Horizontal" Margin="10 0 0 0">
-                    <Label Content="Symbolic Guid" Width="100" />
-                    <TextBox Text="n/a" Name="txtPlacementSymbolicGuid" IsReadOnly="True" Background="Transparent" BorderThickness="0" VerticalAlignment="Center" />
-                </StackPanel>
-
-                <StackPanel Orientation="Horizontal" Margin="10 0 0 0">
-                    <Label Content="Symolic ID" Width="100" />
-                    <TextBox Text="n/a" Name="txtPlacementSymbolicId" IsReadOnly="True" Background="Transparent" BorderThickness="0" VerticalAlignment="Center" />
-                </StackPanel>
-
-                <StackPanel Orientation="Horizontal" Margin="10 0 0 0">
-                    <Label Content="Guid" Width="100" />
-                    <TextBox Text="n/a" Name="txtPlacementGuid" IsReadOnly="True" Background="Transparent" BorderThickness="0" VerticalAlignment="Center" />
-                </StackPanel>
-
-                <StackPanel Orientation="Horizontal" Margin="10 0 0 0">
-                    <Label Content="ID" Width="100" />
-                    <TextBox Text="n/a" Name="txtPlacementId" IsReadOnly="True" Background="Transparent" BorderThickness="0" VerticalAlignment="Center" />
-                </StackPanel>
-
-                <StackPanel Orientation="Horizontal" Margin="10 0 0 0">
-                    <Label Content="Priority" Width="100"/>
-                    <TextBox Name="txtPlacementPriority" Text="n/a" Background="Transparent" BorderThickness="0" VerticalAlignment="Center" />
-                </StackPanel>
-
-                <StackPanel Orientation="Horizontal" Margin="10 0 0 0">
-                    <Label Content="Type" Width="100"/>
-                    <TextBox Name="txtPlacementType" Text="n/a" Background="Transparent" BorderThickness="0" VerticalAlignment="Center" />
-                </StackPanel>
-            </StackPanel>
-        </Grid>
+            </Grid>
+        </ScrollViewer>
     </Grid>
 </UserControl>

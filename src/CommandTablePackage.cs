@@ -24,7 +24,6 @@ namespace CommandTableInfo
         protected override async Task InitializeAsync(CancellationToken cancellationToken, IProgress<ServiceProgressData> progress)
         {   
             await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
-            await EnableInfoCommand.InitializeAsync(this);
             await ShowToolWindow.InitializeAsync(this);
         }
 
@@ -60,7 +59,8 @@ namespace CommandTableInfo
                     dteCommands.Add(command);
             }
 
-            dto.DteCommands = dteCommands.OrderBy(c => c.Name);
+            dto.DTE = dte;
+            dto.DteCommands = dteCommands.OrderBy(c => c.Name).ToList();
 
             var factory = new CommandTableFactory();
             dto.CommandTable = factory.CreateCommandTableFromHost(this, HostLoadType.FromRegisteredMenuDlls);
