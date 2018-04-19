@@ -43,7 +43,7 @@
 
                 <ListView.ItemTemplate>
                     <DataTemplate>
-                        <Label Content="{Binding Name}" Height="26" />
+                        <Label Content="{Binding Name}" ToolTip="{Binding Name}" Height="26" />
                     </DataTemplate>
                 </ListView.ItemTemplate>
             </ListView>
@@ -64,43 +64,68 @@
                     <RowDefinition />
                 </Grid.RowDefinitions>
 
-                <Label Content="Name.Of.Command" Name="txtName" FontWeight="Bold" Grid.Row="0" />
+                <StackPanel Orientation="Horizontal" Grid.Column="0" Grid.Row="0" Grid.ColumnSpan="2">
+                    <Label Content="Name.Of.Command" Name="txtName" VerticalAlignment="Bottom" FontWeight="Bold" FontSize="14" Grid.Row="0" />
+                    <Label Name="btnExecute" VerticalAlignment="Bottom">
+                        <Hyperlink Click="Hyperlink_Click">
+                            Execute
+                        </Hyperlink>
+                    </Label>
+                </StackPanel>
 
-                <WrapPanel Orientation="Vertical" ScrollViewer.HorizontalScrollBarVisibility="Disabled" Grid.Column="0" Grid.Row="1" Grid.ColumnSpan="2">
+                <Grid Grid.Column="0" Grid.Row="1" Grid.ColumnSpan="2">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
 
-                    <StackPanel Orientation="Horizontal" Margin="10 0 0 0">
-                        <Label Content="Guid" Width="100" />
-                        <TextBox Text="n/a" Name="txtGuid" IsReadOnly="True" Background="Transparent" BorderThickness="0" VerticalAlignment="Center" Margin="0 0 20 0" />
+                    <StackPanel Orientation="Vertical" Grid.Column="0">
+                        <StackPanel Orientation="Horizontal" Margin="10 0 0 0">
+                            <Label Content="Guid" Width="110" FontWeight="Bold" />
+                            <TextBox Text="n/a" Name="txtGuid" IsReadOnly="True" Background="Transparent" BorderThickness="0" VerticalAlignment="Center" Margin="0 0 20 0" />
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Margin="10 0 0 0">
+                            <Label Content="ID" Width="110" FontWeight="Bold" />
+                            <TextBox Text="n/a" Name="txtId" IsReadOnly="True" Background="Transparent" BorderThickness="0" VerticalAlignment="Center" Margin="0 0 20 0" />
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Margin="10 0 0 0">
+                            <Label Content="Priority" Width="110" FontWeight="Bold" />
+                            <TextBox Text="loading..." Name="txtPriority" IsReadOnly="True" Background="Transparent" BorderThickness="0" VerticalAlignment="Center" Margin="0 0 20 0" />
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Margin="10 0 0 0">
+                            <Label Content="Key bindings" Width="110" FontWeight="Bold"/>
+                            <TextBox Name="txtBindings" Text="n/a" Background="Transparent" BorderThickness="0" TextWrapping="Wrap" VerticalAlignment="Center" Margin="0 0 20 0" />
+                        </StackPanel>
                     </StackPanel>
 
-                    <StackPanel Orientation="Horizontal" Margin="10 0 0 0">
-                        <Label Content="ID" Width="100" />
-                        <TextBox Text="n/a" Name="txtId" IsReadOnly="True" Background="Transparent" BorderThickness="0" VerticalAlignment="Center" Margin="0 0 20 0" />
-                    </StackPanel>
+                    <StackPanel Orientation="Vertical" Grid.Column="1">
+                        <StackPanel Orientation="Horizontal" Margin="10 0 0 0">
+                            <Label Content="Package" Width="110" FontWeight="Bold" />
+                            <TextBox Text="loading..." Name="txtPackage" IsReadOnly="True" Background="Transparent" BorderThickness="0" VerticalAlignment="Center" Margin="0 0 20 0" />
+                        </StackPanel>
 
-                    <StackPanel Orientation="Horizontal" Margin="10 0 0 0">
-                        <Label Content="Priority" Width="100" />
-                        <TextBox Text="loading..." Name="txtPriority" IsReadOnly="True" Background="Transparent" BorderThickness="0" VerticalAlignment="Center" Margin="0 0 20 0" />
-                    </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="10 0 0 0">
+                            <Label Content="Assembly" Width="110" FontWeight="Bold" />
+                            <TextBox Text="loading..." Name="txtAssembly" IsReadOnly="True" Background="Transparent" BorderThickness="0" VerticalAlignment="Center" Margin="0 0 20 0" />
+                        </StackPanel>
 
-                    <StackPanel Orientation="Horizontal" Margin="10 0 0 0">
-                        <Label Content="Key bindings" Width="100"/>
-                        <TextBox Name="txtBindings" Text="n/a" Background="Transparent" BorderThickness="0" TextWrapping="Wrap" VerticalAlignment="Center" Margin="0 0 20 0" />
-                    </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="10 0 0 0">
+                            <Label Content="Button text" Width="110" FontWeight="Bold" />
+                            <TextBox Text="loading..." Name="txtButtonText" IsReadOnly="True" Background="Transparent" BorderThickness="0" VerticalAlignment="Center" Margin="0 0 20 0" />
+                        </StackPanel>
 
-                    <StackPanel Orientation="Horizontal" Margin="10 0 0 0">
-                        <Label Content="Package" Width="100" />
-                        <TextBox Text="loading..." Name="txtPackage" IsReadOnly="True" Background="Transparent" BorderThickness="0" VerticalAlignment="Center" Margin="0 0 20 0" />
+                        <StackPanel Orientation="Horizontal" Margin="10 0 0 0">
+                            <Label Content="Cannonical Name" Width="110" FontWeight="Bold" />
+                            <TextBox Text="loading..." Name="txtCannonicalName" IsReadOnly="True" Background="Transparent" BorderThickness="0" VerticalAlignment="Center" Margin="0 0 20 0" />
+                        </StackPanel>
                     </StackPanel>
+                </Grid>
 
-                    <StackPanel Orientation="Horizontal" Margin="10 0 0 0">
-                        <Label Content="Assembly" Width="100" />
-                        <TextBox Text="loading..." Name="txtAssembly" IsReadOnly="True" Background="Transparent" BorderThickness="0" VerticalAlignment="Center" Margin="0 0 20 0" />
-                    </StackPanel>
-                </WrapPanel>
-
-                <StackPanel Orientation="Vertical" Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2">
-                    <Label Content="Groups" FontWeight="Bold" Margin="0, 10, 0, 0"/>
+                <StackPanel Orientation="Vertical" Margin="0 10 0 0" Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2">
+                    <Label Content="Groups" FontWeight="Bold" FontSize="14" Margin="0, 10, 0, 0"/>
                     <Label Name="loading" Content="loading..." Margin="10 0 0 0" />
 
                     <TreeView Name="tree" Margin="0" BorderThickness="0">
@@ -110,36 +135,36 @@
                     </TreeView>
                 </StackPanel>
 
-                <StackPanel Name="groupDetails" Orientation="Vertical" Grid.Row="2" Grid.Column="1" Margin="10 10 0 0">
-                    <Label Content="Details" FontWeight="Bold" />
+                <StackPanel Name="groupDetails" Orientation="Vertical" Grid.Row="2" Grid.Column="1" Margin="10 20 0 0">
+                    <Label Content="Details" FontWeight="Bold" FontSize="14" />
 
                     <StackPanel Orientation="Horizontal" Margin="10 0 0 0">
-                        <Label Content="Symbolic Guid" Width="100" />
+                        <Label Content="Symbolic Guid" Width="110" FontWeight="Bold" />
                         <TextBox Text="n/a" Name="txtPlacementSymbolicGuid" IsReadOnly="True" Background="Transparent" BorderThickness="0" VerticalAlignment="Center" />
                     </StackPanel>
 
                     <StackPanel Orientation="Horizontal" Margin="10 0 0 0">
-                        <Label Content="Symolic ID" Width="100" />
+                        <Label Content="Symolic ID" Width="110" FontWeight="Bold" />
                         <TextBox Text="n/a" Name="txtPlacementSymbolicId" IsReadOnly="True" Background="Transparent" BorderThickness="0" VerticalAlignment="Center" />
                     </StackPanel>
 
                     <StackPanel Orientation="Horizontal" Margin="10 0 0 0">
-                        <Label Content="Guid" Width="100" />
+                        <Label Content="Guid" Width="110" FontWeight="Bold" />
                         <TextBox Text="n/a" Name="txtPlacementGuid" IsReadOnly="True" Background="Transparent" BorderThickness="0" VerticalAlignment="Center" />
                     </StackPanel>
 
                     <StackPanel Orientation="Horizontal" Margin="10 0 0 0">
-                        <Label Content="ID" Width="100" />
+                        <Label Content="ID" Width="110" FontWeight="Bold" />
                         <TextBox Text="n/a" Name="txtPlacementId" IsReadOnly="True" Background="Transparent" BorderThickness="0" VerticalAlignment="Center" />
                     </StackPanel>
 
                     <StackPanel Orientation="Horizontal" Margin="10 0 0 0">
-                        <Label Content="Priority" Width="100"/>
+                        <Label Content="Priority" Width="110" FontWeight="Bold"/>
                         <TextBox Name="txtPlacementPriority" Text="n/a" Background="Transparent" BorderThickness="0" VerticalAlignment="Center" />
                     </StackPanel>
 
                     <StackPanel Orientation="Horizontal" Margin="10 0 0 0">
-                        <Label Content="Type" Width="100"/>
+                        <Label Content="Type" Width="110" FontWeight="Bold"/>
                         <TextBox Name="txtPlacementType" Text="n/a" Background="Transparent" BorderThickness="0" VerticalAlignment="Center" />
                     </StackPanel>
                 </StackPanel>

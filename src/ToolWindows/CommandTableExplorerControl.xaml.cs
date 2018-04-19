@@ -58,7 +58,7 @@ namespace CommandTableInfo.ToolWindows
             txtPlacementGuid.Text = e.Command.ItemId.Guid.ToString();
             txtPlacementId.Text = "0x" + e.Command.ItemId.DWord.ToString("x") + $" ({e.Command.ItemId.DWord})";
             txtPlacementPriority.Text = "0x" + e.Command.Priority.ToString("x") + $" ({e.Command.Priority})";
-            txtPlacementType.Text = "Group";
+            txtPlacementType.Text = "n/a";
 
             groupDetails.Visibility = Visibility.Visible;
 
@@ -96,6 +96,8 @@ namespace CommandTableInfo.ToolWindows
                     txtPriority.Text = "0x" + command.Priority.ToString("x") + $" ({command.Priority})";
                     txtPackage.Text = command.SourcePackageInfo.PackageName;
                     txtAssembly.Text = command.SourcePackageInfo.Assembly;
+                    txtButtonText.Text = command.ItemText.ButtonText;
+                    txtCannonicalName.Text = command.ItemText.CanonicalName;
                 }
 
                 loading.Visibility = Visibility.Collapsed;
@@ -177,6 +179,28 @@ namespace CommandTableInfo.ToolWindows
                     list.SelectedIndex = index;
                     list.ScrollIntoView(list.SelectedItem);
                 }
+            }
+        }
+
+        private void Hyperlink_Click(object sender, RoutedEventArgs e)
+        {
+            var cmd = (EnvDTE.Command)list.SelectedValue;
+
+            try
+            {
+                if (cmd != null && cmd.IsAvailable)
+                {
+                    _dto.DTE.Commands.Raise(cmd.Guid, cmd.ID, null, null);
+                    _dto.DTE.StatusBar.Clear();
+                }
+                else
+                {
+                    _dto.DTE.StatusBar.Text = $"The command '{cmd.Name}' is not available in the current context";
+                }
+            }
+            catch (Exception)
+            {
+                _dto.DTE.StatusBar.Text = $"The command '{cmd.Name}' is not available in the current context";
             }
         }
     }
