@@ -36,6 +36,7 @@
             </Grid>
 
             <ListView Name="list" Grid.Row="1" Margin="5" ItemsSource="{Binding Commands}" 
+                      SelectionChanged="OnSelectionChanged"
                       SelectionMode="Single"
                       ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                       VirtualizingPanel.VirtualizationMode="Recycling" 

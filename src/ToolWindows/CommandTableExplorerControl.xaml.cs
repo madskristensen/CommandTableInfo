@@ -16,6 +16,7 @@ namespace CommandTableInfo.ToolWindows
         private Task<IEnumerable<Command>> _commands;
         private EnvDTE.CommandEvents _cmdEvents;
         private bool _hasUsedInspectMode;
+        private CollectionView _view;
 
         public CommandTableExplorerControl(CommandTableExplorerDTO dto)
         {
@@ -24,7 +25,6 @@ namespace CommandTableInfo.ToolWindows
             Commands = _dto.DteCommands;
             DataContext = this;
             Loaded += OnLoaded;
-            Unloaded += OnUnloaded;
 
             InitializeComponent();
             CommandTreeItem.ItemSelected += CommandTreeItem_ItemSelected;
@@ -35,20 +35,14 @@ namespace CommandTableInfo.ToolWindows
 
         private void OnLoaded(object sender, RoutedEventArgs e)
         {
-            txtFilter.Clear();
+            if (_view == null)
+            {
+                details.Visibility = Visibility.Hidden;
+                groupDetails.Visibility = Visibility.Hidden;
 
-            details.Visibility = Visibility.Hidden;
-            groupDetails.Visibility = Visibility.Hidden;
-
-            var view = (CollectionView)CollectionViewSource.GetDefaultView(list.ItemsSource);
-            view.Filter = UserFilter;
-            list.SelectionChanged += OnSelectionChanged;
-        }
-
-        private void OnUnloaded(object sender, RoutedEventArgs e)
-        {
-            cbInspect.IsChecked = false;
-            list.SelectionChanged -= OnSelectionChanged;
+                _view = (CollectionView)CollectionViewSource.GetDefaultView(list.ItemsSource);
+                _view.Filter = UserFilter;
+            }
         }
 
         private void CommandTreeItem_ItemSelected(object sender, CommandTreeItem e)
@@ -123,8 +117,7 @@ namespace CommandTableInfo.ToolWindows
             {
                 var cmd = (EnvDTE.Command)item;
                 return cmd.Name.IndexOf(txtFilter.Text, StringComparison.OrdinalIgnoreCase) >= 0 ||
-                       cmd.Guid.IndexOf(txtFilter.Text, StringComparison.OrdinalIgnoreCase) >= 0 ||
-                       txtFilter.Text.Equals(cmd.ID);
+                       cmd.Guid.IndexOf(txtFilter.Text, StringComparison.OrdinalIgnoreCase) >= 0;
             }
         }
 
@@ -140,7 +133,31 @@ namespace CommandTableInfo.ToolWindows
 
             if (text == txtFilter.Text)
             {
-                CollectionViewSource.GetDefaultView(list.ItemsSource).Refresh();
+                try
+                {
+                    _view.Refresh();
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.Write(ex);
+                }
+
+                EnvDTE.Command cmd = _dto.DteCommands.FirstOrDefault(c => c.Name.Equals(text.Trim(), StringComparison.OrdinalIgnoreCase));
+
+                await Microsoft.VisualStudio.Shell.ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+                if (cmd != null)
+                {
+                    list.SelectedItem = cmd;
+                    list.ScrollIntoView(list.SelectedItem);
+                }
+
+                _cmdEvents.BeforeExecute -= CommandEvents_BeforeExecute;
+
+                if (cbInspect.IsChecked == true)
+                {
+                    _cmdEvents.BeforeExecute += CommandEvents_BeforeExecute;
+                }
             }
         }
 
@@ -151,7 +168,6 @@ namespace CommandTableInfo.ToolWindows
             if (cb.IsChecked == true)
             {
                 _cmdEvents.BeforeExecute += CommandEvents_BeforeExecute;
-                txtFilter.Clear();
 
                 if (!_hasUsedInspectMode)
                 {
@@ -171,14 +187,12 @@ namespace CommandTableInfo.ToolWindows
                 (Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl)))
             {
                 CancelDefault = true;
-                cbInspect.IsChecked = false;
                 EnvDTE.Command cmd = _dto.DteCommands.FirstOrDefault(c => c.Guid == Guid && c.ID == ID);
+                _cmdEvents.BeforeExecute -= CommandEvents_BeforeExecute;
 
                 if (cmd != null)
                 {
-                    int index = _dto.DteCommands.IndexOf(cmd);
-                    list.SelectedIndex = index;
-                    list.ScrollIntoView(list.SelectedItem);
+                    txtFilter.Text = cmd.Name;
                 }
             }
         }
