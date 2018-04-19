@@ -171,6 +171,7 @@ namespace CommandTableInfo.ToolWindows
                 (Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl)))
             {
                 CancelDefault = true;
+                cbInspect.IsChecked = false;
                 EnvDTE.Command cmd = _dto.DteCommands.FirstOrDefault(c => c.Guid == Guid && c.ID == ID);
 
                 if (cmd != null)
