@@ -2,7 +2,7 @@
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
     <Metadata>
         <Identity Id="1a973c52-a674-48d8-a276-65ddab1ac598" Version="1.0" Language="en-US" Publisher="Mads Kristensen" />
-        <DisplayName>Command Table Info</DisplayName>
+        <DisplayName>Command Explorer</DisplayName>
         <Description xml:space="preserve">Provides a tool window to explorer all commands, groups and menus to help extension authors place commands/buttons in the desired location</Description>
         <MoreInfo>https://github.com/madskristensen/CommandTableInfo/</MoreInfo>
         <License>Resources\LICENSE</License>

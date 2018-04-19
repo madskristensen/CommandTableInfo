@@ -118,7 +118,7 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="110" xml:space="preserve">
-    <value>Command Table Info</value>
+    <value>Command Explorer</value>
   </data>
   <data name="112" xml:space="preserve">
     <value>Provides a tool window to explorer all commands, groups and menus to help extension authors place commands/buttons in the desired location</value>
