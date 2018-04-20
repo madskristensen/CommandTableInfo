@@ -22,8 +22,6 @@ namespace CommandTableInfo
     /// </summary>
     internal sealed partial class PackageIds
     {
-        public const int MyMenuGroup = 0x1020;
-        public const int EnableInfoCommandId = 0x0100;
         public const int ShowToolWindowId = 0x0200;
     }
 }
