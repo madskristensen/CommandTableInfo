@@ -10,13 +10,14 @@ using CommandTable;
 
 namespace CommandTableInfo.ToolWindows
 {
-    public partial class CommandTableExplorerControl : UserControl
+    public partial class CommandTableExplorerControl : UserControl, IDisposable
     {
         private readonly CommandTableExplorerDTO _dto;
         private Task<IEnumerable<Command>> _commands;
         private EnvDTE.CommandEvents _cmdEvents;
         private bool _hasUsedInspectMode;
         private CollectionView _view;
+        private bool _isDisposed;
 
         public CommandTableExplorerControl(CommandTableExplorerDTO dto)
         {
@@ -217,6 +218,27 @@ namespace CommandTableInfo.ToolWindows
             {
                 _dto.DTE.StatusBar.Text = $"The command '{cmd.Name}' is not available in the current context";
             }
+        }
+
+        public void Dispose()
+        {
+            if (!_isDisposed)
+            {
+                CommandTreeItem.ItemSelected -= CommandTreeItem_ItemSelected;
+                _cmdEvents.BeforeExecute -= CommandEvents_BeforeExecute;
+                Loaded -= OnLoaded;
+
+                _dto.CommandTable = null;
+
+                if (_commands.IsCompleted)
+                {
+                    _commands.Dispose();
+                }
+
+                _commands = null;
+            }
+
+            _isDisposed = true;
         }
     }
 }
