@@ -63,7 +63,8 @@ namespace CommandTableInfo
             dto.DteCommands = dteCommands.OrderBy(c => c.Name).ToList();
 
             var factory = new CommandTableFactory();
-            dto.CommandTable = factory.CreateCommandTableFromHost(this, HostLoadType.FromRegisteredMenuDlls);
+            ICommandTable table = factory.CreateCommandTableFromHost(this, HostLoadType.FromRegisteredMenuDlls);
+            dto.CommandTable = await table.GetCommands();
 
             return dto;
         }

@@ -13,8 +13,7 @@ namespace CommandTableInfo.ToolWindows
     public partial class CommandTableExplorerControl : UserControl, IDisposable
     {
         private readonly CommandTableExplorerDTO _dto;
-        private Task<IEnumerable<Command>> _commands;
-        private EnvDTE.CommandEvents _cmdEvents;
+        private readonly EnvDTE.CommandEvents _cmdEvents;
         private bool _hasUsedInspectMode;
         private CollectionView _view;
         private bool _isDisposed;
@@ -29,7 +28,6 @@ namespace CommandTableInfo.ToolWindows
 
             InitializeComponent();
             CommandTreeItem.ItemSelected += CommandTreeItem_ItemSelected;
-            _commands = _dto.CommandTable.GetCommands();
         }
 
         public IEnumerable<EnvDTE.Command> Commands { get; }
@@ -72,31 +70,27 @@ namespace CommandTableInfo.ToolWindows
             txtId.Text = "0x" + cmd.ID.ToString("x") + $" ({cmd.ID})";
             txtBindings.Text = string.Join(Environment.NewLine, GetBindings(cmd.Bindings as object[]));
 
-            PopulateGroupsAsync(cmd).ConfigureAwait(false);
+            PopulateGroups(cmd);
 
             details.Visibility = Visibility.Visible;
         }
 
-        private async Task PopulateGroupsAsync(EnvDTE.Command cmd)
+        private void PopulateGroups(EnvDTE.Command cmd)
         {
-            if (_commands.IsCompleted)
+            Command command = _dto.CommandTable.FirstOrDefault(c => c.ItemId.Guid == new Guid(cmd.Guid) && c.ItemId.DWord == cmd.ID);
+
+            if (command != null)
             {
-                IEnumerable<Command> commands = await _commands;
-                Command command = commands.FirstOrDefault(c => c.ItemId.Guid == new Guid(cmd.Guid) && c.ItemId.DWord == cmd.ID);
+                tree.ItemsSource = command.Placements.Select(p => new CommandTreeItem(p));
 
-                if (command != null)
-                {
-                    tree.ItemsSource = command.Placements.Select(p => new CommandTreeItem(p));
-
-                    txtPriority.Text = "0x" + command.Priority.ToString("x") + $" ({command.Priority})";
-                    txtPackage.Text = command.SourcePackageInfo.PackageName;
-                    txtAssembly.Text = command.SourcePackageInfo.Assembly;
-                    txtButtonText.Text = command.ItemText.ButtonText;
-                    txtCannonicalName.Text = command.ItemText.CanonicalName;
-                }
-
-                loading.Visibility = Visibility.Collapsed;
+                txtPriority.Text = "0x" + command.Priority.ToString("x") + $" ({command.Priority})";
+                txtPackage.Text = command.SourcePackageInfo.PackageName;
+                txtAssembly.Text = command.SourcePackageInfo.Assembly;
+                txtButtonText.Text = command.ItemText.ButtonText;
+                txtCannonicalName.Text = command.ItemText.CanonicalName;
             }
+
+            loading.Visibility = Visibility.Collapsed;
         }
 
         private static IEnumerable<string> GetBindings(IEnumerable<object> bindings)
@@ -229,13 +223,6 @@ namespace CommandTableInfo.ToolWindows
                 Loaded -= OnLoaded;
 
                 _dto.CommandTable = null;
-
-                if (_commands.IsCompleted)
-                {
-                    _commands.Dispose();
-                }
-
-                _commands = null;
             }
 
             _isDisposed = true;
