@@ -8,8 +8,10 @@ using CommandTable;
 using CommandTableInfo.ToolWindows;
 using EnvDTE;
 using EnvDTE80;
+using Microsoft;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
+using Microsoft.VisualStudio.Threading;
 using Task = System.Threading.Tasks.Task;
 
 namespace CommandTableInfo
@@ -49,7 +51,11 @@ namespace CommandTableInfo
 
         protected override async Task<object> InitializeToolWindowAsync(Type toolWindowType, int id, CancellationToken cancellationToken)
         {
+            await JoinableTaskFactory.SwitchToMainThreadAsync();
+
             var dte = await GetServiceAsync(typeof(DTE)) as DTE2;
+            Assumes.Present(dte);
+
             var dto = new CommandTableExplorerDTO();
             var dteCommands = new List<EnvDTE.Command>();
 
@@ -61,6 +67,8 @@ namespace CommandTableInfo
 
             dto.DTE = dte;
             dto.DteCommands = dteCommands.OrderBy(c => c.Name).ToList();
+
+            await TaskScheduler.Default;
 
             var factory = new CommandTableFactory();
             ICommandTable table = factory.CreateCommandTableFromHost(this, HostLoadType.FromRegisteredMenuDlls);

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.ComponentModel.Design;
 using CommandTableInfo.ToolWindows;
+using Microsoft;
 using Microsoft.VisualStudio.Shell;
 using Task = System.Threading.Tasks.Task;
 
@@ -10,7 +11,10 @@ namespace CommandTableInfo
     {
         public static async Task InitializeAsync(AsyncPackage package)
         {
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
             var commandService = (IMenuCommandService)await package.GetServiceAsync(typeof(IMenuCommandService));
+            Assumes.Present(commandService);
 
             var menuCommandID = new CommandID(PackageGuids.guidCommandTablePackageCmdSet, PackageIds.ShowToolWindowId);
             var menuItem = new MenuCommand((sender, e) => Execute(package, sender, e), menuCommandID);
