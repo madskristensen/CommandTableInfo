@@ -65,14 +65,20 @@ namespace CommandTableInfo.ToolWindows
         {
             var cmd = (EnvDTE.Command)list.SelectedValue;
 
-            txtName.Content = cmd.Name;
-            txtGuid.Text = cmd.Guid;
-            txtId.Text = "0x" + cmd.ID.ToString("x") + $" ({cmd.ID})";
-            txtBindings.Text = string.Join(Environment.NewLine, GetBindings(cmd.Bindings as object[]));
+            ResetDetails();
 
-            PopulateGroups(cmd);
+            if (cmd != null)
+            {
+                txtName.Content = cmd.Name;
+                txtGuid.Text = cmd.Guid;
+                txtId.Text = "0x" + cmd.ID.ToString("x") + $" ({cmd.ID})";
+                txtBindings.Text = string.Join(Environment.NewLine, GetBindings(cmd.Bindings as object[]));
 
-            details.Visibility = Visibility.Visible;
+                PopulateGroups(cmd);
+
+                details.Visibility = Visibility.Visible;
+            }
+
         }
 
         private void PopulateGroups(EnvDTE.Command cmd)
@@ -88,6 +94,18 @@ namespace CommandTableInfo.ToolWindows
                 txtAssembly.Text = command.SourcePackageInfo.Assembly;
                 txtButtonText.Text = command.ItemText.ButtonText;
                 txtCannonicalName.Text = command.ItemText.CanonicalName;
+
+
+            }
+            else
+            {
+                tree.ItemsSource = null;
+
+                txtPriority.Text = "n/a";
+                txtPackage.Text = "n/a";
+                txtAssembly.Text = "n/a";
+                txtButtonText.Text = "n/a";
+                txtCannonicalName.Text = "n/a";
             }
 
             loading.Visibility = Visibility.Collapsed;
@@ -212,6 +230,32 @@ namespace CommandTableInfo.ToolWindows
             {
                 _dto.DTE.StatusBar.Text = $"The command '{cmd.Name}' is not available in the current context";
             }
+        }
+
+        private void ResetDetails()
+        {
+            txtName.Content = "loading...";
+            txtGuid.Text = "n/a";
+            txtId.Text = "n/a";
+            txtBindings.Text = "n/a";
+            txtPriority.Text = "loading...";
+            txtPackage.Text = "loading...";
+            txtAssembly.Text = "loading...";
+            txtButtonText.Text = "loading...";
+            txtCannonicalName.Text = "loading...";
+
+            tree.ItemsSource = null;
+
+            txtPlacementSymbolicGuid.Text = "n/a";
+            txtPlacementSymbolicId.Text = "n/a";
+            txtPlacementGuid.Text = "n/a";
+            txtPlacementId.Text = "n/a";
+            txtPlacementPriority.Text = "n/a";
+            txtPlacementType.Text = "n/a";
+
+            details.Visibility = Visibility.Hidden;
+            groupDetails.Visibility = Visibility.Hidden;
+            loading.Visibility = Visibility.Visible;
         }
 
         public void Dispose()
