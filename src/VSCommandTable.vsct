@@ -8,7 +8,7 @@
   <Commands package="guidCommandTablePackage">
     <Buttons>
       <Button guid="guidCommandTablePackageCmdSet" id="ShowToolWindowId" priority="0x0101" type="Button">
-        <Parent guid="guidSHLMainMenu" id="IDG_VS_WNDO_OTRWNDWS1"/>
+        <Parent guid="guidSHLMainMenu" id="IDG_VS_WNDO_OTRWNDWS2"/>
         <Icon guid="ImageCatalogGuid" id="CommandUIOption"/>
         <CommandFlag>IconIsMoniker</CommandFlag>
         <Strings>

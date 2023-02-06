@@ -6,7 +6,6 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Input;
-using CommandTable;
 
 namespace CommandTableInfo.ToolWindows
 {
@@ -20,6 +19,7 @@ namespace CommandTableInfo.ToolWindows
 
         public CommandTableExplorerControl(CommandTableExplorerDTO dto)
         {
+            Microsoft.VisualStudio.Shell.ThreadHelper.ThrowIfNotOnUIThread();
             _dto = dto;
             _cmdEvents = dto.DTE.Events.CommandEvents;
             Commands = _dto.DteCommands;
@@ -27,7 +27,7 @@ namespace CommandTableInfo.ToolWindows
             Loaded += OnLoaded;
 
             InitializeComponent();
-            CommandTreeItem.ItemSelected += CommandTreeItem_ItemSelected;
+            //CommandTreeItem.ItemSelected += CommandTreeItem_ItemSelected;
         }
 
         public IEnumerable<EnvDTE.Command> Commands { get; }
@@ -37,32 +37,33 @@ namespace CommandTableInfo.ToolWindows
             if (_view == null)
             {
                 details.Visibility = Visibility.Hidden;
-                groupDetails.Visibility = Visibility.Hidden;
+                //groupDetails.Visibility = Visibility.Hidden;
 
                 _view = (CollectionView)CollectionViewSource.GetDefaultView(list.ItemsSource);
                 _view.Filter = UserFilter;
             }
         }
 
-        private void CommandTreeItem_ItemSelected(object sender, CommandTreeItem e)
-        {
-            txtPlacementSymbolicGuid.Text = e.Command.SymbolicItemId.SymbolicGuidName.Replace("guidSolutionExplorerMenu", "guidSHLMainMenu");
-            txtPlacementSymbolicId.Text = e.Command.SymbolicItemId.SymbolicDWordName;
-            txtPlacementGuid.Text = e.Command.ItemId.Guid.ToString();
-            txtPlacementId.Text = "0x" + e.Command.ItemId.DWord.ToString("x") + $" ({e.Command.ItemId.DWord})";
-            txtPlacementPriority.Text = "0x" + e.Command.Priority.ToString("x") + $" ({e.Command.Priority})";
-            txtPlacementType.Text = "n/a";
+        //private void CommandTreeItem_ItemSelected(object sender, CommandTreeItem e)
+        //{
+        //    txtPlacementSymbolicGuid.Text = e.Command.SymbolicItemId.SymbolicGuidName.Replace("guidSolutionExplorerMenu", "guidSHLMainMenu");
+        //    txtPlacementSymbolicId.Text = e.Command.SymbolicItemId.SymbolicDWordName;
+        //    txtPlacementGuid.Text = e.Command.ItemId.Guid.ToString();
+        //    txtPlacementId.Text = "0x" + e.Command.ItemId.DWord.ToString("x") + $" ({e.Command.ItemId.DWord})";
+        //    txtPlacementPriority.Text = "0x" + e.Command.Priority.ToString("x") + $" ({e.Command.Priority})";
+        //    txtPlacementType.Text = "n/a";
 
-            groupDetails.Visibility = Visibility.Visible;
+        //    groupDetails.Visibility = Visibility.Visible;
 
-            if (e.Command is CommandContainer menu)
-            {
-                txtPlacementType.Text = menu.Type.ToString();
-            }
-        }
+        //    //if (e.Command is CommandContainer menu)
+        //    //{
+        //    //    txtPlacementType.Text = menu.Type.ToString();
+        //    //}
+        //}
 
         private void OnSelectionChanged(object sender, SelectionChangedEventArgs e)
         {
+            Microsoft.VisualStudio.Shell.ThreadHelper.ThrowIfNotOnUIThread();
             var cmd = (EnvDTE.Command)list.SelectedValue;
 
             ResetDetails();
@@ -73,42 +74,10 @@ namespace CommandTableInfo.ToolWindows
                 txtGuid.Text = cmd.Guid;
                 txtId.Text = "0x" + cmd.ID.ToString("x") + $" ({cmd.ID})";
                 txtBindings.Text = string.Join(Environment.NewLine, GetBindings(cmd.Bindings as object[]));
-
-                PopulateGroups(cmd);
-
+                
                 details.Visibility = Visibility.Visible;
             }
 
-        }
-
-        private void PopulateGroups(EnvDTE.Command cmd)
-        {
-            Command command = _dto.CommandTable.FirstOrDefault(c => c.ItemId.Guid == new Guid(cmd.Guid) && c.ItemId.DWord == cmd.ID);
-
-            if (command != null)
-            {
-                tree.ItemsSource = command.Placements.Select(p => new CommandTreeItem(p));
-
-                txtPriority.Text = "0x" + command.Priority.ToString("x") + $" ({command.Priority})";
-                txtPackage.Text = command.SourcePackageInfo.PackageName;
-                txtAssembly.Text = command.SourcePackageInfo.Assembly;
-                txtButtonText.Text = command.ItemText.ButtonText;
-                txtCannonicalName.Text = command.ItemText.CanonicalName;
-
-
-            }
-            else
-            {
-                tree.ItemsSource = null;
-
-                txtPriority.Text = "n/a";
-                txtPackage.Text = "n/a";
-                txtAssembly.Text = "n/a";
-                txtButtonText.Text = "n/a";
-                txtCannonicalName.Text = "n/a";
-            }
-
-            loading.Visibility = Visibility.Collapsed;
         }
 
         private static IEnumerable<string> GetBindings(IEnumerable<object> bindings)
@@ -122,6 +91,8 @@ namespace CommandTableInfo.ToolWindows
 
         private bool UserFilter(object item)
         {
+            Microsoft.VisualStudio.Shell.ThreadHelper.ThrowIfNotOnUIThread();
+
             if (string.IsNullOrEmpty(txtFilter.Text))
             {
                 return true;
@@ -137,7 +108,7 @@ namespace CommandTableInfo.ToolWindows
         private void TextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
             string text = ((TextBox)sender).Text;
-            RefreshAsync(text).ConfigureAwait(false);
+            _ = RefreshAsync(text).ConfigureAwait(false);
         }
 
         private async Task RefreshAsync(string text)
@@ -176,6 +147,7 @@ namespace CommandTableInfo.ToolWindows
 
         private void CheckBox_Checked(object sender, RoutedEventArgs e)
         {
+            Microsoft.VisualStudio.Shell.ThreadHelper.ThrowIfNotOnUIThread();
             var cb = (CheckBox)sender;
 
             if (cb.IsChecked == true)
@@ -196,6 +168,8 @@ namespace CommandTableInfo.ToolWindows
 
         private void CommandEvents_BeforeExecute(string Guid, int ID, object CustomIn, object CustomOut, ref bool CancelDefault)
         {
+            Microsoft.VisualStudio.Shell.ThreadHelper.ThrowIfNotOnUIThread();
+
             if ((Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift)) &&
                 (Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl)))
             {
@@ -212,6 +186,7 @@ namespace CommandTableInfo.ToolWindows
 
         private void Hyperlink_Click(object sender, RoutedEventArgs e)
         {
+            Microsoft.VisualStudio.Shell.ThreadHelper.ThrowIfNotOnUIThread();
             var cmd = (EnvDTE.Command)list.SelectedValue;
 
             try
@@ -238,35 +213,20 @@ namespace CommandTableInfo.ToolWindows
             txtGuid.Text = "n/a";
             txtId.Text = "n/a";
             txtBindings.Text = "n/a";
-            txtPriority.Text = "loading...";
-            txtPackage.Text = "loading...";
-            txtAssembly.Text = "loading...";
-            txtButtonText.Text = "loading...";
-            txtCannonicalName.Text = "loading...";
-
-            tree.ItemsSource = null;
-
-            txtPlacementSymbolicGuid.Text = "n/a";
-            txtPlacementSymbolicId.Text = "n/a";
-            txtPlacementGuid.Text = "n/a";
-            txtPlacementId.Text = "n/a";
-            txtPlacementPriority.Text = "n/a";
-            txtPlacementType.Text = "n/a";
 
             details.Visibility = Visibility.Hidden;
-            groupDetails.Visibility = Visibility.Hidden;
-            loading.Visibility = Visibility.Visible;
         }
 
         public void Dispose()
         {
+            Microsoft.VisualStudio.Shell.ThreadHelper.ThrowIfNotOnUIThread();
             if (!_isDisposed)
             {
-                CommandTreeItem.ItemSelected -= CommandTreeItem_ItemSelected;
+                //CommandTreeItem.ItemSelected -= CommandTreeItem_ItemSelected;
                 _cmdEvents.BeforeExecute -= CommandEvents_BeforeExecute;
                 Loaded -= OnLoaded;
 
-                _dto.CommandTable = null;
+               // _dto.CommandTable = null;
             }
 
             _isDisposed = true;

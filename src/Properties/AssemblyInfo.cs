@@ -11,7 +11,6 @@ using Microsoft.VisualStudio.Shell;
 [assembly: AssemblyCopyright(Vsix.Author)]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
-[assembly: ProvideCodeBase(AssemblyName = "CommandTable")]
 [assembly: ProvideCodeBase()]
 
 [assembly: ComVisible(false)]

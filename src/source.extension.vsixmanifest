@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
     <Metadata>
-        <Identity Id="1a973c52-a674-48d8-a276-65ddab1ac598" Version="1.0.9999" Language="en-US" Publisher="Mads Kristensen" />
+        <Identity Id="1a973c52-a674-48d8-a276-65ddab1ac598" Version="1.1" Language="en-US" Publisher="Mads Kristensen" />
         <DisplayName>Command Explorer</DisplayName>
         <Description xml:space="preserve">Provides a tool window to explorer all commands, groups and menus to help extension authors place commands/buttons in the desired location</Description>
         <MoreInfo>https://github.com/madskristensen/CommandTableInfo/</MoreInfo>
@@ -10,8 +10,13 @@
         <PreviewImage>Resources\Icon.png</PreviewImage>
         <Tags>vsix, commands, groups, menus</Tags>
     </Metadata>
-    <Installation AllUsers="true">
-        <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[15.0.27205,17.0)" />
+    <Installation>
+        <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[17.0,18.0)">
+            <ProductArchitecture>amd64</ProductArchitecture>
+        </InstallationTarget>
+        <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[17.0,18.0)">
+            <ProductArchitecture>arm64</ProductArchitecture>
+        </InstallationTarget>
     </Installation>
     <Prerequisites>
         <Prerequisite Id="Microsoft.VisualStudio.Component.CoreEditor" Version="[15.0,)" DisplayName="Visual Studio core editor" />

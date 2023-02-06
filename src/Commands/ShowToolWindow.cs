@@ -23,7 +23,7 @@ namespace CommandTableInfo
 
         private static void Execute(AsyncPackage package, object sender, EventArgs e)
         {
-            package.JoinableTaskFactory.RunAsync(async () =>
+            _ = package.JoinableTaskFactory.RunAsync(async () =>
             {
                 ToolWindowPane window = await package.ShowToolWindowAsync(
                     typeof(CommandTableWindow),
