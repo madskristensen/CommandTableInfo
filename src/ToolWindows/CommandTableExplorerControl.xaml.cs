@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
@@ -64,9 +65,19 @@ namespace CommandTableInfo.ToolWindows
 
         private static IEnumerable<string> GetBindings(IEnumerable<object> bindings)
         {
-            IEnumerable<string> result = bindings.Select(binding => binding.ToString().IndexOf("::") >= 0
-                ? binding.ToString().Substring(binding.ToString().IndexOf("::") + 2)
-                : binding.ToString()).Distinct();
+            if (bindings == null)
+            {
+                return Enumerable.Empty<string>();
+            }
+
+            IEnumerable<string> result = bindings
+                .Where(binding => binding != null)
+                .Select(binding => binding.ToString())
+                .Where(binding => !string.IsNullOrWhiteSpace(binding))
+                .Select(binding => binding.IndexOf("::", StringComparison.Ordinal) >= 0
+                    ? binding.Substring(binding.IndexOf("::", StringComparison.Ordinal) + 2)
+                    : binding)
+                .Distinct(StringComparer.OrdinalIgnoreCase);
 
             return result;
         }
@@ -75,16 +86,75 @@ namespace CommandTableInfo.ToolWindows
         {
             Microsoft.VisualStudio.Shell.ThreadHelper.ThrowIfNotOnUIThread();
 
-            if (string.IsNullOrEmpty(txtFilter.Text))
+            if (string.IsNullOrWhiteSpace(txtFilter.Text))
             {
                 return true;
             }
             else
             {
                 var cmd = (EnvDTE.Command)item;
-                return cmd.Name.IndexOf(txtFilter.Text, StringComparison.OrdinalIgnoreCase) >= 0 ||
-                       cmd.Guid.IndexOf(txtFilter.Text, StringComparison.OrdinalIgnoreCase) >= 0;
+                string filterText = txtFilter.Text.Trim();
+                string normalizedFilterText = NormalizeGuidForSearch(filterText);
+
+                if (cmd.Name.IndexOf(filterText, StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    return true;
+                }
+
+                if (cmd.Guid.IndexOf(filterText, StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    return true;
+                }
+
+                if (!string.IsNullOrEmpty(normalizedFilterText) &&
+                    NormalizeGuidForSearch(cmd.Guid).IndexOf(normalizedFilterText, StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    return true;
+                }
+
+                string idAsDecimal = cmd.ID.ToString(CultureInfo.InvariantCulture);
+                string idAsHex = cmd.ID.ToString("x", CultureInfo.InvariantCulture);
+                string idAsHexPrefixed = "0x" + idAsHex;
+                string hexFilterText = filterText.StartsWith("0x", StringComparison.OrdinalIgnoreCase)
+                    ? filterText.Substring(2)
+                    : filterText;
+
+                if (idAsDecimal.IndexOf(filterText, StringComparison.OrdinalIgnoreCase) >= 0 ||
+                    idAsHex.IndexOf(hexFilterText, StringComparison.OrdinalIgnoreCase) >= 0 ||
+                    idAsHexPrefixed.IndexOf(filterText, StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    return true;
+                }
+
+                string normalizedBindingFilterText = NormalizeBindingForSearch(filterText);
+                return GetBindings(cmd.Bindings as object[])
+                    .Any(binding => NormalizeBindingForSearch(binding)
+                        .IndexOf(normalizedBindingFilterText, StringComparison.OrdinalIgnoreCase) >= 0);
             }
+        }
+
+        private static string NormalizeGuidForSearch(string value)
+        {
+            if (string.IsNullOrEmpty(value))
+            {
+                return string.Empty;
+            }
+
+            return value
+                .Replace("-", string.Empty)
+                .Replace("{", string.Empty)
+                .Replace("}", string.Empty)
+                .Trim();
+        }
+
+        private static string NormalizeBindingForSearch(string value)
+        {
+            if (string.IsNullOrEmpty(value))
+            {
+                return string.Empty;
+            }
+
+            return value.Replace(" ", string.Empty).Trim();
         }
 
         private void TextBox_TextChanged(object sender, TextChangedEventArgs e)
@@ -180,11 +250,6 @@ namespace CommandTableInfo.ToolWindows
             }
         }
 
-        private void CopyName_Click(object sender, RoutedEventArgs e)
-        {
-            CopyValueToClipboard(txtName.Content?.ToString() ?? string.Empty);
-        }
-
         private void CopyGuid_Click(object sender, RoutedEventArgs e)
         {
             CopyValueToClipboard(txtGuid.Text);
@@ -215,7 +280,6 @@ namespace CommandTableInfo.ToolWindows
 
         private void UpdateCopyButtonsVisibility()
         {
-            btnCopyName.Visibility = string.IsNullOrWhiteSpace(txtName.Content?.ToString()) ? Visibility.Collapsed : Visibility.Visible;
             btnCopyGuid.Visibility = string.IsNullOrWhiteSpace(txtGuid.Text) ? Visibility.Collapsed : Visibility.Visible;
             btnCopyId.Visibility = string.IsNullOrWhiteSpace(txtId.Text) ? Visibility.Collapsed : Visibility.Visible;
             btnCopyBindings.Visibility = string.IsNullOrWhiteSpace(txtBindings.Text) ? Visibility.Collapsed : Visibility.Visible;

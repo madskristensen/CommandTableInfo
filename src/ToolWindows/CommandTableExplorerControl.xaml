@@ -91,9 +91,6 @@
 
                 <StackPanel Orientation="Horizontal" Grid.Column="0" Grid.Row="0" Grid.ColumnSpan="2">
                     <Label Content="Name.Of.Command" Name="txtName" VerticalAlignment="Bottom" FontWeight="Bold" FontSize="14" Grid.Row="0" />
-                    <Button Name="btnCopyName" Style="{StaticResource CopyButtonStyle}" Click="CopyName_Click" VerticalAlignment="Bottom" Margin="0,0,0,4">
-                        <imaging:CrispImage Width="16" Height="16" Moniker="{x:Static catalog:KnownMonikers.Copy}" />
-                    </Button>
                     <Label Name="btnExecute" VerticalAlignment="Bottom">
                         <Hyperlink Click="Hyperlink_Click">
                             Execute
