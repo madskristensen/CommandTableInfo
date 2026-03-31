@@ -58,6 +58,8 @@ namespace CommandTableInfo.ToolWindows
                 details.Visibility = Visibility.Visible;
             }
 
+            UpdateCopyButtonsVisibility();
+
         }
 
         private static IEnumerable<string> GetBindings(IEnumerable<object> bindings)
@@ -178,12 +180,55 @@ namespace CommandTableInfo.ToolWindows
             }
         }
 
+        private void CopyName_Click(object sender, RoutedEventArgs e)
+        {
+            CopyValueToClipboard(txtName.Content?.ToString() ?? string.Empty);
+        }
+
+        private void CopyGuid_Click(object sender, RoutedEventArgs e)
+        {
+            CopyValueToClipboard(txtGuid.Text);
+        }
+
+        private void CopyId_Click(object sender, RoutedEventArgs e)
+        {
+            CopyValueToClipboard(txtId.Text);
+        }
+
+        private void CopyBindings_Click(object sender, RoutedEventArgs e)
+        {
+            CopyValueToClipboard(txtBindings.Text);
+        }
+
+        private void CopyValueToClipboard(string value)
+        {
+            Microsoft.VisualStudio.Shell.ThreadHelper.ThrowIfNotOnUIThread();
+
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return;
+            }
+
+            Clipboard.SetText(value);
+            _dto.DTE.StatusBar.Text = "Value copied to clipboard";
+        }
+
+        private void UpdateCopyButtonsVisibility()
+        {
+            btnCopyName.Visibility = string.IsNullOrWhiteSpace(txtName.Content?.ToString()) ? Visibility.Collapsed : Visibility.Visible;
+            btnCopyGuid.Visibility = string.IsNullOrWhiteSpace(txtGuid.Text) ? Visibility.Collapsed : Visibility.Visible;
+            btnCopyId.Visibility = string.IsNullOrWhiteSpace(txtId.Text) ? Visibility.Collapsed : Visibility.Visible;
+            btnCopyBindings.Visibility = string.IsNullOrWhiteSpace(txtBindings.Text) ? Visibility.Collapsed : Visibility.Visible;
+        }
+
         private void ResetDetails()
         {
             txtName.Content = "loading...";
             txtGuid.Text = "n/a";
             txtId.Text = "n/a";
             txtBindings.Text = "n/a";
+
+            UpdateCopyButtonsVisibility();
 
             details.Visibility = Visibility.Hidden;
         }
