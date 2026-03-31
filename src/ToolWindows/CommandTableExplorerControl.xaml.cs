@@ -355,16 +355,19 @@ namespace CommandTableInfo.ToolWindows
 
         private void CopyGuid_Click(object sender, RoutedEventArgs e)
         {
+            Microsoft.VisualStudio.Shell.ThreadHelper.ThrowIfNotOnUIThread();
             CopyValueToClipboard(txtGuid.Tag as string ?? txtGuid.Text);
         }
 
         private void CopyId_Click(object sender, RoutedEventArgs e)
         {
+            Microsoft.VisualStudio.Shell.ThreadHelper.ThrowIfNotOnUIThread();
             CopyValueToClipboard(txtId.Tag as string ?? txtId.Text);
         }
 
         private void CopyBindings_Click(object sender, RoutedEventArgs e)
         {
+            Microsoft.VisualStudio.Shell.ThreadHelper.ThrowIfNotOnUIThread();
             CopyValueToClipboard(txtBindings.Text);
         }
 
