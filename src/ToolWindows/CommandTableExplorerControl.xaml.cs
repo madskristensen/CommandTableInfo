@@ -27,7 +27,6 @@ namespace CommandTableInfo.ToolWindows
             Loaded += OnLoaded;
 
             InitializeComponent();
-            //CommandTreeItem.ItemSelected += CommandTreeItem_ItemSelected;
         }
 
         public IEnumerable<EnvDTE.Command> Commands { get; }
@@ -37,29 +36,10 @@ namespace CommandTableInfo.ToolWindows
             if (_view == null)
             {
                 details.Visibility = Visibility.Hidden;
-                //groupDetails.Visibility = Visibility.Hidden;
-
                 _view = (CollectionView)CollectionViewSource.GetDefaultView(list.ItemsSource);
                 _view.Filter = UserFilter;
             }
         }
-
-        //private void CommandTreeItem_ItemSelected(object sender, CommandTreeItem e)
-        //{
-        //    txtPlacementSymbolicGuid.Text = e.Command.SymbolicItemId.SymbolicGuidName.Replace("guidSolutionExplorerMenu", "guidSHLMainMenu");
-        //    txtPlacementSymbolicId.Text = e.Command.SymbolicItemId.SymbolicDWordName;
-        //    txtPlacementGuid.Text = e.Command.ItemId.Guid.ToString();
-        //    txtPlacementId.Text = "0x" + e.Command.ItemId.DWord.ToString("x") + $" ({e.Command.ItemId.DWord})";
-        //    txtPlacementPriority.Text = "0x" + e.Command.Priority.ToString("x") + $" ({e.Command.Priority})";
-        //    txtPlacementType.Text = "n/a";
-
-        //    groupDetails.Visibility = Visibility.Visible;
-
-        //    //if (e.Command is CommandContainer menu)
-        //    //{
-        //    //    txtPlacementType.Text = menu.Type.ToString();
-        //    //}
-        //}
 
         private void OnSelectionChanged(object sender, SelectionChangedEventArgs e)
         {
@@ -134,13 +114,6 @@ namespace CommandTableInfo.ToolWindows
                     list.SelectedItem = cmd;
                     list.ScrollIntoView(list.SelectedItem);
                 }
-
-                _cmdEvents.BeforeExecute -= CommandEvents_BeforeExecute;
-
-                if (cbInspect.IsChecked == true)
-                {
-                    _cmdEvents.BeforeExecute += CommandEvents_BeforeExecute;
-                }
             }
         }
 
@@ -174,7 +147,6 @@ namespace CommandTableInfo.ToolWindows
             {
                 CancelDefault = true;
                 EnvDTE.Command cmd = _dto.DteCommands.FirstOrDefault(c => { Microsoft.VisualStudio.Shell.ThreadHelper.ThrowIfNotOnUIThread(); return c.Guid == Guid && c.ID == ID; });
-                _cmdEvents.BeforeExecute -= CommandEvents_BeforeExecute;
 
                 if (cmd != null)
                 {
@@ -221,11 +193,8 @@ namespace CommandTableInfo.ToolWindows
             Microsoft.VisualStudio.Shell.ThreadHelper.ThrowIfNotOnUIThread();
             if (!_isDisposed)
             {
-                //CommandTreeItem.ItemSelected -= CommandTreeItem_ItemSelected;
                 _cmdEvents.BeforeExecute -= CommandEvents_BeforeExecute;
                 Loaded -= OnLoaded;
-
-               // _dto.CommandTable = null;
             }
 
             _isDisposed = true;

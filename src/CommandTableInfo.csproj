@@ -68,7 +68,6 @@
     </Compile>
     <Compile Include="ToolWindows\CommandTableExplorerDTO.cs" />
     <Compile Include="ToolWindows\CommandTableWindow.cs" />
-    <Compile Include="ToolWindows\CommandTreeItem.cs" />
     <Compile Include="ToolWindows\VsTheme.cs" />
     <Compile Include="VSCommandTable.cs">
       <AutoGen>True</AutoGen>

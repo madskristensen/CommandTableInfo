@@ -12,7 +12,7 @@ namespace CommandTableInfo
         public const string Name = "Command Explorer";
         public const string Description = @"Provides a tool window to explorer all commands, groups and menus to help extension authors place commands/buttons in the desired location";
         public const string Language = "en-US";
-        public const string Version = "1.1";
+        public const string Version = "1.2";
         public const string Author = "Mads Kristensen";
         public const string Tags = "vsix, commands, groups, menus";
         public const bool IsPreview = false;
