@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -65,7 +65,7 @@ namespace CommandTableInfo
             }
 
             dto.DTE = dte;
-            dto.DteCommands = dteCommands.OrderBy(c => c.Name).ToList();
+            dto.DteCommands = dteCommands.OrderBy(c => { ThreadHelper.ThrowIfNotOnUIThread(); return c.Name; }).ToList();
 
             return dto;
         }

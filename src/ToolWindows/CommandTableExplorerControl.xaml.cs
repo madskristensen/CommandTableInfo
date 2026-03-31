@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -114,6 +114,7 @@ namespace CommandTableInfo.ToolWindows
         private async Task RefreshAsync(string text)
         {
             await Task.Delay(300);
+            await Microsoft.VisualStudio.Shell.ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
             if (text == txtFilter.Text)
             {
@@ -126,9 +127,7 @@ namespace CommandTableInfo.ToolWindows
                     System.Diagnostics.Debug.Write(ex);
                 }
 
-                EnvDTE.Command cmd = _dto.DteCommands.FirstOrDefault(c => c.Name.Equals(text.Trim(), StringComparison.OrdinalIgnoreCase));
-
-                await Microsoft.VisualStudio.Shell.ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                EnvDTE.Command cmd = _dto.DteCommands.FirstOrDefault(c => { Microsoft.VisualStudio.Shell.ThreadHelper.ThrowIfNotOnUIThread(); return c.Name.Equals(text.Trim(), StringComparison.OrdinalIgnoreCase); });
 
                 if (cmd != null)
                 {
@@ -174,7 +173,7 @@ namespace CommandTableInfo.ToolWindows
                 (Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl)))
             {
                 CancelDefault = true;
-                EnvDTE.Command cmd = _dto.DteCommands.FirstOrDefault(c => c.Guid == Guid && c.ID == ID);
+                EnvDTE.Command cmd = _dto.DteCommands.FirstOrDefault(c => { Microsoft.VisualStudio.Shell.ThreadHelper.ThrowIfNotOnUIThread(); return c.Guid == Guid && c.ID == ID; });
                 _cmdEvents.BeforeExecute -= CommandEvents_BeforeExecute;
 
                 if (cmd != null)

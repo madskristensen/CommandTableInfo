@@ -1,0 +1,18 @@
+{
+  "$schema": "http://json.schemastore.org/vsix-publish",
+  "categories": [ "coding" ],
+  "identity": {
+    "internalName": "CommandExplorer",
+    "tags": [ "vsix", "commands", "groups", "menus" ]
+  },
+  "assetFiles": [
+    {
+      "pathOnDisk": "art/toolwindow.png",
+      "targetPath": "art/toolwindow.png"
+    }
+  ],
+  "overview": "README.md",
+  "publisher": "MadsKristensen",
+  "private": false,
+  "repo": "https://github.com/madskristensen/CommandTableInfo"
+}
