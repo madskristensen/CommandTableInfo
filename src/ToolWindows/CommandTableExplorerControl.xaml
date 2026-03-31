@@ -4,12 +4,39 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:local="clr-namespace:CommandTableInfo.ToolWindows"
+             xmlns:platformui="clr-namespace:Microsoft.VisualStudio.PlatformUI;assembly=Microsoft.VisualStudio.Shell.15.0"
              xmlns:imaging="clr-namespace:Microsoft.VisualStudio.Imaging;assembly=Microsoft.VisualStudio.Imaging"
              xmlns:catalog="clr-namespace:Microsoft.VisualStudio.Imaging;assembly=Microsoft.VisualStudio.ImageCatalog"
              mc:Ignorable="d"
              local:VsTheme.UseVsTheme="true"
              d:DesignHeight="450" d:DesignWidth="800">
     <UserControl.Resources>
+        <Style x:Key="SearchTextBoxStyle" TargetType="TextBox">
+            <Setter Property="Padding" Value="6,3" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource {x:Static platformui:EnvironmentColors.ToolWindowTextBrushKey}}" />
+            <Setter Property="CaretBrush" Value="{DynamicResource {x:Static platformui:EnvironmentColors.ToolWindowTextBrushKey}}" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="ToolTip" Value="Search by name, guid, ID, or key binding" />
+        </Style>
+
+        <Style x:Key="SplitterThumbStyle" TargetType="Thumb">
+            <Setter Property="Background" Value="{DynamicResource {x:Static platformui:EnvironmentColors.ToolWindowBorderBrushKey}}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Thumb">
+                        <Border Background="{TemplateBinding Background}" />
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource {x:Static platformui:EnvironmentColors.CommandBarHoverOverSelectedIconBrushKey}}" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
         <Style x:Key="CopyButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
@@ -29,6 +56,25 @@
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
+        </Style>
+
+        <Style x:Key="DetailLabelStyle" TargetType="Label">
+            <Setter Property="Width" Value="110" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="Foreground" Value="{DynamicResource {x:Static platformui:EnvironmentColors.ToolWindowTextBrushKey}}" />
+            <Setter Property="VerticalAlignment" Value="Top" />
+            <Setter Property="Margin" Value="0,0,8,0" />
+        </Style>
+
+        <Style x:Key="DetailValueTextBoxStyle" TargetType="TextBox">
+            <Setter Property="IsReadOnly" Value="True" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Foreground" Value="{DynamicResource {x:Static platformui:EnvironmentColors.ToolWindowTextBrushKey}}" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="MinHeight" Value="24" />
         </Style>
     </UserControl.Resources>
     <Grid>
@@ -50,12 +96,39 @@
                     <ColumnDefinition Width="auto"/>
                 </Grid.ColumnDefinitions>
 
-                <TextBox Name="txtFilter" Grid.Column="0" Margin="5, 5, 5, 5" Height="25" TextWrapping="Wrap" TextChanged="TextBox_TextChanged"/>
+                <Border Grid.Column="0"
+                        Margin="5"
+                        Padding="4,0"
+                        BorderThickness="1"
+                        CornerRadius="2"
+                        BorderBrush="{DynamicResource {x:Static platformui:EnvironmentColors.ToolWindowBorderBrushKey}}"
+                        Background="{DynamicResource {x:Static platformui:EnvironmentColors.ToolWindowBackgroundBrushKey}}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <imaging:CrispImage Grid.Column="0"
+                                            Width="16"
+                                            Height="16"
+                                            Margin="2,0,6,0"
+                                            VerticalAlignment="Center"
+                                            Moniker="{x:Static catalog:KnownMonikers.Search}" />
+
+                        <TextBox Name="txtFilter"
+                                 Grid.Column="1"
+                                 MinHeight="24"
+                                 TextChanged="TextBox_TextChanged"
+                                 Style="{StaticResource SearchTextBoxStyle}" />
+                    </Grid>
+                </Border>
+
                 <CheckBox Name="cbInspect" Grid.Column="1"
                           Content="Inspect mode"
                           VerticalContentAlignment="Center" VerticalAlignment="Center"
-                          Margin="10 0 10 0"
-                          Padding="4 -3 0 0"
+                          Margin="8,0,10,0"
+                          Padding="0"
                           Unchecked="CheckBox_Checked" Checked="CheckBox_Checked"/>
             </Grid>
 
@@ -74,12 +147,23 @@
             </ListView>
         </Grid>
 
-        <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch" />
+        <GridSplitter Grid.Column="1"
+                      Width="5"
+                      HorizontalAlignment="Stretch"
+                      Background="{DynamicResource {x:Static platformui:EnvironmentColors.ToolWindowBorderBrushKey}}"
+                      ShowsPreview="True"
+                      ResizeBehavior="PreviousAndNext"
+                      ResizeDirection="Columns">
+            <GridSplitter.Template>
+                <ControlTemplate TargetType="GridSplitter">
+                    <Thumb Style="{StaticResource SplitterThumbStyle}" />
+                </ControlTemplate>
+            </GridSplitter.Template>
+        </GridSplitter>
 
-        <ScrollViewer VerticalScrollBarVisibility="Auto" Grid.Column="2">
+        <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
             <Grid Name="details" Margin="10">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
 
@@ -89,8 +173,14 @@
                     <RowDefinition />
                 </Grid.RowDefinitions>
 
-                <StackPanel Orientation="Horizontal" Grid.Column="0" Grid.Row="0" Grid.ColumnSpan="2">
-                    <Label Content="Name.Of.Command" Name="txtName" VerticalAlignment="Bottom" FontWeight="Bold" FontSize="14" Grid.Row="0" />
+                <StackPanel Orientation="Horizontal" Grid.Column="0" Grid.Row="0">
+                    <Label Content="Name.Of.Command"
+                           Name="txtName"
+                           VerticalAlignment="Bottom"
+                           FontWeight="Bold"
+                           FontSize="14"
+                           Foreground="{DynamicResource {x:Static platformui:EnvironmentColors.ToolWindowTextBrushKey}}"
+                           Grid.Row="0" />
                     <Label Name="btnExecute" VerticalAlignment="Bottom">
                         <Hyperlink Click="Hyperlink_Click">
                             Execute
@@ -98,37 +188,35 @@
                     </Label>
                 </StackPanel>
 
-                <Grid Grid.Column="0" Grid.Row="1" Grid.ColumnSpan="2">
+                <Grid Grid.Column="0" Grid.Row="1" Margin="10,0,0,0" HorizontalAlignment="Left">
                     <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
 
-                    <StackPanel Orientation="Vertical" Grid.Column="0">
-                        <StackPanel Orientation="Horizontal" Margin="10 0 0 0">
-                            <Label Content="Guid" Width="110" FontWeight="Bold" />
-                            <TextBox Text="n/a" Name="txtGuid" IsReadOnly="True" Background="Transparent" BorderThickness="0" VerticalAlignment="Center" Margin="0 0 4 0" />
-                            <Button Name="btnCopyGuid" Style="{StaticResource CopyButtonStyle}" Click="CopyGuid_Click">
-                                <imaging:CrispImage Width="16" Height="16" Moniker="{x:Static catalog:KnownMonikers.Copy}" />
-                            </Button>
-                        </StackPanel>
+                    <Label Grid.Row="0" Grid.Column="0" Content="Guid" Style="{StaticResource DetailLabelStyle}" />
+                    <TextBox Grid.Row="0" Grid.Column="1" Name="txtGuid" Text="n/a" Style="{StaticResource DetailValueTextBoxStyle}" Margin="0,0,4,0" />
+                    <Button Grid.Row="0" Grid.Column="2" Name="btnCopyGuid" Style="{StaticResource CopyButtonStyle}" Click="CopyGuid_Click">
+                        <imaging:CrispImage Width="16" Height="16" Moniker="{x:Static catalog:KnownMonikers.Copy}" />
+                    </Button>
 
-                        <StackPanel Orientation="Horizontal" Margin="10 0 0 0">
-                            <Label Content="ID" Width="110" FontWeight="Bold" />
-                            <TextBox Text="n/a" Name="txtId" IsReadOnly="True" Background="Transparent" BorderThickness="0" VerticalAlignment="Center" Margin="0 0 4 0" />
-                            <Button Name="btnCopyId" Style="{StaticResource CopyButtonStyle}" Click="CopyId_Click">
-                                <imaging:CrispImage Width="16" Height="16" Moniker="{x:Static catalog:KnownMonikers.Copy}" />
-                            </Button>
-                        </StackPanel>
+                    <Label Grid.Row="1" Grid.Column="0" Content="ID" Style="{StaticResource DetailLabelStyle}" />
+                    <TextBox Grid.Row="1" Grid.Column="1" Name="txtId" Text="n/a" Style="{StaticResource DetailValueTextBoxStyle}" Margin="0,0,4,0" />
+                    <Button Grid.Row="1" Grid.Column="2" Name="btnCopyId" Style="{StaticResource CopyButtonStyle}" Click="CopyId_Click">
+                        <imaging:CrispImage Width="16" Height="16" Moniker="{x:Static catalog:KnownMonikers.Copy}" />
+                    </Button>
 
-                        <StackPanel Orientation="Horizontal" Margin="10 0 0 0">
-                            <Label Content="Key bindings" Width="110" FontWeight="Bold"/>
-                            <TextBox Name="txtBindings" Text="n/a" Background="Transparent" BorderThickness="0" TextWrapping="Wrap" VerticalAlignment="Center" Margin="0 0 4 0" />
-                            <Button Name="btnCopyBindings" Style="{StaticResource CopyButtonStyle}" Click="CopyBindings_Click">
-                                <imaging:CrispImage Width="16" Height="16" Moniker="{x:Static catalog:KnownMonikers.Copy}" />
-                            </Button>
-                        </StackPanel>
-                    </StackPanel>
+                    <Label Grid.Row="2" Grid.Column="0" Content="Key bindings" Style="{StaticResource DetailLabelStyle}" />
+                    <TextBox Grid.Row="2" Grid.Column="1" Name="txtBindings" Text="n/a" Style="{StaticResource DetailValueTextBoxStyle}" Margin="0,0,4,0" AcceptsReturn="True" VerticalAlignment="Top" />
+                    <Button Grid.Row="2" Grid.Column="2" Name="btnCopyBindings" Style="{StaticResource CopyButtonStyle}" Click="CopyBindings_Click" VerticalAlignment="Top">
+                        <imaging:CrispImage Width="16" Height="16" Moniker="{x:Static catalog:KnownMonikers.Copy}" />
+                    </Button>
                 </Grid>
             </Grid>
         </ScrollViewer>

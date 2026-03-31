@@ -1,7 +1,10 @@
+using Microsoft.VisualStudio;
+
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -12,6 +15,8 @@ namespace CommandTableInfo.ToolWindows
 {
     public partial class CommandTableExplorerControl : UserControl, IDisposable
     {
+        private static readonly IDictionary<Guid, string> KnownCommandSetNames = CreateKnownCommandSetNameMap();
+        private static readonly IDictionary<Guid, IDictionary<int, string>> KnownCommandIds = CreateKnownCommandIdMap();
         private readonly CommandTableExplorerDTO _dto;
         private readonly EnvDTE.CommandEvents _cmdEvents;
         private bool _hasUsedInspectMode;
@@ -52,10 +57,12 @@ namespace CommandTableInfo.ToolWindows
             if (cmd != null)
             {
                 txtName.Content = cmd.Name;
-                txtGuid.Text = cmd.Guid;
-                txtId.Text = "0x" + cmd.ID.ToString("x") + $" ({cmd.ID})";
+                txtGuid.Text = FormatGuidValue(cmd.Guid);
+                txtId.Text = FormatIdValue(cmd.Guid, cmd.ID);
+                txtGuid.Tag = cmd.Guid;
+                txtId.Tag = "0x" + cmd.ID.ToString("x", CultureInfo.InvariantCulture) + " (" + cmd.ID.ToString(CultureInfo.InvariantCulture) + ")";
                 txtBindings.Text = string.Join(Environment.NewLine, GetBindings(cmd.Bindings as object[]));
-                
+
                 details.Visibility = Visibility.Visible;
             }
 
@@ -157,6 +164,102 @@ namespace CommandTableInfo.ToolWindows
             return value.Replace(" ", string.Empty).Trim();
         }
 
+        private static string FormatGuidValue(string guidText)
+        {
+            if (!Guid.TryParse(guidText, out Guid guid))
+            {
+                return guidText;
+            }
+
+            if (KnownCommandSetNames.TryGetValue(guid, out string knownName))
+            {
+                return string.Format(CultureInfo.InvariantCulture, "{0} ({1})", knownName, guidText);
+            }
+
+            return guidText;
+        }
+
+        private static string FormatIdValue(string guidText, int id)
+        {
+            string numericValue = "0x" + id.ToString("x", CultureInfo.InvariantCulture) + " (" + id.ToString(CultureInfo.InvariantCulture) + ")";
+
+            if (!Guid.TryParse(guidText, out Guid guid))
+            {
+                return numericValue;
+            }
+
+            if (KnownCommandIds.TryGetValue(guid, out IDictionary<int, string> commandIds) &&
+                commandIds.TryGetValue(id, out string knownIdName))
+            {
+                return string.Format(CultureInfo.InvariantCulture, "{0} ({1})", knownIdName, numericValue);
+            }
+
+            return numericValue;
+        }
+
+        private static IDictionary<Guid, string> CreateKnownCommandSetNameMap()
+        {
+            var map = new Dictionary<Guid, string>();
+
+            AddKnownCommandSetName(map, VSConstants.GUID_VSStandardCommandSet97, "guidVSStd97");
+            AddKnownCommandSetName(map, VSConstants.VSStd2K, "guidVSStd2K");
+
+            foreach (FieldInfo field in typeof(VSConstants).GetFields(BindingFlags.Public | BindingFlags.Static))
+            {
+                if (field.FieldType != typeof(Guid))
+                {
+                    continue;
+                }
+
+                Guid guid = (Guid)field.GetValue(null);
+
+                if (!map.ContainsKey(guid))
+                {
+                    map.Add(guid, field.Name);
+                }
+            }
+
+            return map;
+        }
+
+        private static IDictionary<Guid, IDictionary<int, string>> CreateKnownCommandIdMap()
+        {
+            var map = new Dictionary<Guid, IDictionary<int, string>>();
+
+            AddKnownCommandIds(map, VSConstants.GUID_VSStandardCommandSet97, typeof(VSConstants.VSStd97CmdID));
+            AddKnownCommandIds(map, VSConstants.VSStd2K, typeof(VSConstants.VSStd2KCmdID));
+
+            return map;
+        }
+
+        private static void AddKnownCommandIds(IDictionary<Guid, IDictionary<int, string>> map, Guid commandSet, Type enumType)
+        {
+            var commandIds = new Dictionary<int, string>();
+
+            foreach (object value in Enum.GetValues(enumType))
+            {
+                int commandId = Convert.ToInt32(value, CultureInfo.InvariantCulture);
+
+                if (!commandIds.ContainsKey(commandId))
+                {
+                    commandIds.Add(commandId, Enum.GetName(enumType, value));
+                }
+            }
+
+            if (!map.ContainsKey(commandSet))
+            {
+                map.Add(commandSet, commandIds);
+            }
+        }
+
+        private static void AddKnownCommandSetName(IDictionary<Guid, string> map, Guid guid, string name)
+        {
+            if (!map.ContainsKey(guid))
+            {
+                map.Add(guid, name);
+            }
+        }
+
         private void TextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
             string text = ((TextBox)sender).Text;
@@ -252,12 +355,12 @@ namespace CommandTableInfo.ToolWindows
 
         private void CopyGuid_Click(object sender, RoutedEventArgs e)
         {
-            CopyValueToClipboard(txtGuid.Text);
+            CopyValueToClipboard(txtGuid.Tag as string ?? txtGuid.Text);
         }
 
         private void CopyId_Click(object sender, RoutedEventArgs e)
         {
-            CopyValueToClipboard(txtId.Text);
+            CopyValueToClipboard(txtId.Tag as string ?? txtId.Text);
         }
 
         private void CopyBindings_Click(object sender, RoutedEventArgs e)
@@ -291,6 +394,8 @@ namespace CommandTableInfo.ToolWindows
             txtGuid.Text = "n/a";
             txtId.Text = "n/a";
             txtBindings.Text = "n/a";
+            txtGuid.Tag = null;
+            txtId.Tag = null;
 
             UpdateCopyButtonsVisibility();
 
