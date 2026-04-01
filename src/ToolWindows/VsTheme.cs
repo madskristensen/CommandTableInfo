@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
@@ -9,10 +9,10 @@ namespace CommandTableInfo.ToolWindows
 {
     public static class VsTheme
     {
-        private static Dictionary<UIElement, bool> _isUsingVsTheme = new Dictionary<UIElement, bool>();
-        private static Dictionary<UIElement, object> _originalBackgrounds = new Dictionary<UIElement, object>();
+        private static readonly Dictionary<UIElement, bool> _isUsingVsTheme = new Dictionary<UIElement, bool>();
+        private static readonly Dictionary<UIElement, object> _originalBackgrounds = new Dictionary<UIElement, object>();
 
-        public static DependencyProperty UseVsThemeProperty = DependencyProperty.RegisterAttached("UseVsTheme", typeof(bool), typeof(VsTheme), new PropertyMetadata(false, UseVsThemePropertyChanged));
+        public static readonly DependencyProperty UseVsThemeProperty = DependencyProperty.RegisterAttached("UseVsTheme", typeof(bool), typeof(VsTheme), new PropertyMetadata(false, UseVsThemePropertyChanged));
 
         private static void UseVsThemePropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
@@ -21,6 +21,11 @@ namespace CommandTableInfo.ToolWindows
 
         public static void SetUseVsTheme(UIElement element, bool value)
         {
+            if (!(element is FrameworkElement frameworkElement))
+            {
+                return;
+            }
+
             if (value)
             {
                 if (!_originalBackgrounds.ContainsKey(element) && element is Control c)
@@ -28,14 +33,18 @@ namespace CommandTableInfo.ToolWindows
                     _originalBackgrounds[element] = c.Background;
                 }
 
-                ((ContentControl)element).ShouldBeThemed();
+                frameworkElement.Unloaded -= OnElementUnloaded;
+                frameworkElement.Unloaded += OnElementUnloaded;
+                frameworkElement.ShouldBeThemed();
+                _isUsingVsTheme[element] = true;
             }
             else
             {
-                ((ContentControl)element).ShouldNotBeThemed();
+                frameworkElement.Unloaded -= OnElementUnloaded;
+                frameworkElement.ShouldNotBeThemed();
+                _isUsingVsTheme.Remove(element);
+                _originalBackgrounds.Remove(element);
             }
-
-            _isUsingVsTheme[element] = value;
         }
 
         public static bool GetUseVsTheme(UIElement element)
@@ -133,6 +142,20 @@ namespace CommandTableInfo.ToolWindows
                 {
                     c.ClearValue(Control.BackgroundProperty);
                 }
+            }
+        }
+
+        private static void OnElementUnloaded(object sender, RoutedEventArgs e)
+        {
+            if (sender is UIElement element)
+            {
+                _isUsingVsTheme.Remove(element);
+                _originalBackgrounds.Remove(element);
+            }
+
+            if (sender is FrameworkElement frameworkElement)
+            {
+                frameworkElement.Unloaded -= OnElementUnloaded;
             }
         }
     }

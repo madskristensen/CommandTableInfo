@@ -59,12 +59,16 @@ namespace CommandTableInfo
 
             foreach (Command command in dte.Commands)
             {
-                if (!string.IsNullOrEmpty(command.Name))
+                if (command != null && !string.IsNullOrEmpty(command.Name))
+                {
                     dteCommands.Add(command);
+                }
             }
 
             dto.DTE = dte;
-            dto.DteCommands = dteCommands.OrderBy(c => { ThreadHelper.ThrowIfNotOnUIThread(); return c.Name; }).ToList();
+            dto.DteCommands = dteCommands
+                .OrderBy(c => c.Name, StringComparer.OrdinalIgnoreCase)
+                .ToList();
 
             return dto;
         }

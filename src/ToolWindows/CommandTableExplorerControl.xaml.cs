@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -19,9 +20,16 @@ namespace CommandTableInfo.ToolWindows
         private static readonly IDictionary<Guid, IDictionary<int, string>> KnownCommandIds = CreateKnownCommandIdMap();
         private readonly CommandTableExplorerDTO _dto;
         private readonly EnvDTE.CommandEvents _cmdEvents;
+        private readonly Dictionary<EnvDTE.Command, CommandSearchIndex> _searchIndex;
+        private readonly Dictionary<string, EnvDTE.Command> _commandByName;
         private bool _hasUsedInspectMode;
         private CollectionView _view;
         private bool _isDisposed;
+        private CancellationTokenSource _refreshCancellationTokenSource;
+        private string _cachedFilterText;
+        private string _cachedNormalizedFilterText;
+        private string _cachedHexFilterText;
+        private string _cachedNormalizedBindingFilterText;
 
         public CommandTableExplorerControl(CommandTableExplorerDTO dto)
         {
@@ -29,6 +37,23 @@ namespace CommandTableInfo.ToolWindows
             _dto = dto;
             _cmdEvents = dto.DTE.Events.CommandEvents;
             Commands = _dto.DteCommands;
+            _searchIndex = new Dictionary<EnvDTE.Command, CommandSearchIndex>();
+            _commandByName = new Dictionary<string, EnvDTE.Command>(StringComparer.OrdinalIgnoreCase);
+            _cachedFilterText = string.Empty;
+            _cachedNormalizedFilterText = string.Empty;
+            _cachedHexFilterText = string.Empty;
+            _cachedNormalizedBindingFilterText = string.Empty;
+
+            foreach (EnvDTE.Command command in _dto.DteCommands)
+            {
+                _searchIndex[command] = CreateSearchIndex(command);
+
+                if (!_commandByName.ContainsKey(command.Name))
+                {
+                    _commandByName.Add(command.Name, command);
+                }
+            }
+
             DataContext = this;
             Loaded += OnLoaded;
 
@@ -101,43 +126,79 @@ namespace CommandTableInfo.ToolWindows
             {
                 var cmd = (EnvDTE.Command)item;
                 string filterText = txtFilter.Text.Trim();
-                string normalizedFilterText = NormalizeGuidForSearch(filterText);
+                EnsureFilterCache(filterText);
 
-                if (cmd.Name.IndexOf(filterText, StringComparison.OrdinalIgnoreCase) >= 0)
+                if (!_searchIndex.TryGetValue(cmd, out CommandSearchIndex searchIndex))
+                {
+                    searchIndex = CreateSearchIndex(cmd);
+                    _searchIndex[cmd] = searchIndex;
+                }
+
+                if (searchIndex.Name.IndexOf(filterText, StringComparison.OrdinalIgnoreCase) >= 0)
                 {
                     return true;
                 }
 
-                if (cmd.Guid.IndexOf(filterText, StringComparison.OrdinalIgnoreCase) >= 0)
+                if (searchIndex.Guid.IndexOf(filterText, StringComparison.OrdinalIgnoreCase) >= 0)
                 {
                     return true;
                 }
 
-                if (!string.IsNullOrEmpty(normalizedFilterText) &&
-                    NormalizeGuidForSearch(cmd.Guid).IndexOf(normalizedFilterText, StringComparison.OrdinalIgnoreCase) >= 0)
+                if (!string.IsNullOrEmpty(_cachedNormalizedFilterText) &&
+                    searchIndex.NormalizedGuid.IndexOf(_cachedNormalizedFilterText, StringComparison.OrdinalIgnoreCase) >= 0)
                 {
                     return true;
                 }
 
-                string idAsDecimal = cmd.ID.ToString(CultureInfo.InvariantCulture);
-                string idAsHex = cmd.ID.ToString("x", CultureInfo.InvariantCulture);
-                string idAsHexPrefixed = "0x" + idAsHex;
-                string hexFilterText = filterText.StartsWith("0x", StringComparison.OrdinalIgnoreCase)
-                    ? filterText.Substring(2)
-                    : filterText;
-
-                if (idAsDecimal.IndexOf(filterText, StringComparison.OrdinalIgnoreCase) >= 0 ||
-                    idAsHex.IndexOf(hexFilterText, StringComparison.OrdinalIgnoreCase) >= 0 ||
-                    idAsHexPrefixed.IndexOf(filterText, StringComparison.OrdinalIgnoreCase) >= 0)
+                if (searchIndex.IdAsDecimal.IndexOf(filterText, StringComparison.OrdinalIgnoreCase) >= 0 ||
+                    searchIndex.IdAsHex.IndexOf(_cachedHexFilterText, StringComparison.OrdinalIgnoreCase) >= 0 ||
+                    searchIndex.IdAsHexPrefixed.IndexOf(filterText, StringComparison.OrdinalIgnoreCase) >= 0)
                 {
                     return true;
                 }
 
-                string normalizedBindingFilterText = NormalizeBindingForSearch(filterText);
-                return GetBindings(cmd.Bindings as object[])
-                    .Any(binding => NormalizeBindingForSearch(binding)
-                        .IndexOf(normalizedBindingFilterText, StringComparison.OrdinalIgnoreCase) >= 0);
+                if (string.IsNullOrEmpty(_cachedNormalizedBindingFilterText))
+                {
+                    return false;
+                }
+
+                return searchIndex.NormalizedBindings.Any(binding =>
+                    binding.IndexOf(_cachedNormalizedBindingFilterText, StringComparison.OrdinalIgnoreCase) >= 0);
             }
+        }
+
+        private void EnsureFilterCache(string filterText)
+        {
+            if (string.Equals(_cachedFilterText, filterText, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            _cachedFilterText = filterText;
+            _cachedNormalizedFilterText = NormalizeGuidForSearch(filterText);
+            _cachedNormalizedBindingFilterText = NormalizeBindingForSearch(filterText);
+            _cachedHexFilterText = filterText.StartsWith("0x", StringComparison.OrdinalIgnoreCase)
+                ? filterText.Substring(2)
+                : filterText;
+        }
+
+        private static CommandSearchIndex CreateSearchIndex(EnvDTE.Command command)
+        {
+            var bindings = GetBindings(command.Bindings as object[])
+                .Select(NormalizeBindingForSearch)
+                .Where(binding => !string.IsNullOrEmpty(binding))
+                .ToArray();
+
+            string idAsHex = command.ID.ToString("x", CultureInfo.InvariantCulture);
+
+            return new CommandSearchIndex(
+                command.Name ?? string.Empty,
+                command.Guid ?? string.Empty,
+                NormalizeGuidForSearch(command.Guid),
+                command.ID.ToString(CultureInfo.InvariantCulture),
+                idAsHex,
+                "0x" + idAsHex,
+                bindings);
         }
 
         private static string NormalizeGuidForSearch(string value)
@@ -263,13 +324,25 @@ namespace CommandTableInfo.ToolWindows
         private void TextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
             string text = ((TextBox)sender).Text;
-            _ = RefreshAsync(text).ConfigureAwait(false);
+
+            _refreshCancellationTokenSource?.Cancel();
+            _refreshCancellationTokenSource?.Dispose();
+            _refreshCancellationTokenSource = new CancellationTokenSource();
+
+            _ = RefreshAsync(text, _refreshCancellationTokenSource.Token);
         }
 
-        private async Task RefreshAsync(string text)
+        private async Task RefreshAsync(string text, CancellationToken cancellationToken)
         {
-            await Task.Delay(300);
-            await Microsoft.VisualStudio.Shell.ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+            try
+            {
+                await Task.Delay(300, cancellationToken);
+                await Microsoft.VisualStudio.Shell.ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                return;
+            }
 
             if (text == txtFilter.Text)
             {
@@ -282,7 +355,7 @@ namespace CommandTableInfo.ToolWindows
                     System.Diagnostics.Debug.Write(ex);
                 }
 
-                EnvDTE.Command cmd = _dto.DteCommands.FirstOrDefault(c => { Microsoft.VisualStudio.Shell.ThreadHelper.ThrowIfNotOnUIThread(); return c.Name.Equals(text.Trim(), StringComparison.OrdinalIgnoreCase); });
+                _commandByName.TryGetValue(text.Trim(), out EnvDTE.Command cmd);
 
                 if (cmd != null)
                 {
@@ -335,9 +408,15 @@ namespace CommandTableInfo.ToolWindows
             Microsoft.VisualStudio.Shell.ThreadHelper.ThrowIfNotOnUIThread();
             var cmd = (EnvDTE.Command)list.SelectedValue;
 
+            if (cmd == null)
+            {
+                _dto.DTE.StatusBar.Text = "No command selected";
+                return;
+            }
+
             try
             {
-                if (cmd != null && cmd.IsAvailable)
+                if (cmd.IsAvailable)
                 {
                     _dto.DTE.Commands.Raise(cmd.Guid, cmd.ID, null, null);
                     _dto.DTE.StatusBar.Clear();
@@ -347,9 +426,9 @@ namespace CommandTableInfo.ToolWindows
                     _dto.DTE.StatusBar.Text = $"The command '{cmd.Name}' is not available in the current context";
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                _dto.DTE.StatusBar.Text = $"The command '{cmd.Name}' is not available in the current context";
+                _dto.DTE.StatusBar.Text = $"Failed to execute '{cmd.Name}': {ex.Message}";
             }
         }
 
@@ -412,9 +491,34 @@ namespace CommandTableInfo.ToolWindows
             {
                 _cmdEvents.BeforeExecute -= CommandEvents_BeforeExecute;
                 Loaded -= OnLoaded;
+                _refreshCancellationTokenSource?.Cancel();
+                _refreshCancellationTokenSource?.Dispose();
+                _refreshCancellationTokenSource = null;
             }
 
             _isDisposed = true;
+        }
+
+        private sealed class CommandSearchIndex
+        {
+            public CommandSearchIndex(string name, string guid, string normalizedGuid, string idAsDecimal, string idAsHex, string idAsHexPrefixed, string[] normalizedBindings)
+            {
+                Name = name;
+                Guid = guid;
+                NormalizedGuid = normalizedGuid;
+                IdAsDecimal = idAsDecimal;
+                IdAsHex = idAsHex;
+                IdAsHexPrefixed = idAsHexPrefixed;
+                NormalizedBindings = normalizedBindings;
+            }
+
+            public string Name { get; }
+            public string Guid { get; }
+            public string NormalizedGuid { get; }
+            public string IdAsDecimal { get; }
+            public string IdAsHex { get; }
+            public string IdAsHexPrefixed { get; }
+            public string[] NormalizedBindings { get; }
         }
     }
 }
