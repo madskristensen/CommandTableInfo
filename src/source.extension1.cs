@@ -10,11 +10,11 @@ namespace CommandTableInfo
     {
         public const string Id = "1a973c52-a674-48d8-a276-65ddab1ac598";
         public const string Name = "Command Explorer";
-        public const string Description = @"Provides a tool window to explorer all commands, groups and menus to help extension authors place commands/buttons in the desired location";
+        public const string Description = @"Search, inspect, and explore every command, menu, toolbar, and key binding in Visual Studio. Instantly find GUIDs, IDs, and menu hierarchy for your .vsct files. Essential for extension authors.";
         public const string Language = "en-US";
         public const string Version = "1.2";
         public const string Author = "Mads Kristensen";
-        public const string Tags = "vsix, commands, groups, menus";
+        public const string Tags = "vsix, extensibility, commands, menus, toolbars, vsct, command table, groups";
         public const bool IsPreview = false;
     }
 }

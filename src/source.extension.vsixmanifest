@@ -3,12 +3,12 @@
     <Metadata>
         <Identity Id="1a973c52-a674-48d8-a276-65ddab1ac598" Version="1.2" Language="en-US" Publisher="Mads Kristensen" />
         <DisplayName>Command Explorer</DisplayName>
-        <Description xml:space="preserve">Provides a tool window to explorer all commands, groups and menus to help extension authors place commands/buttons in the desired location</Description>
+        <Description xml:space="preserve">Search, inspect, and explore every command, menu, toolbar, and key binding in Visual Studio. Instantly find GUIDs, IDs, and menu hierarchy for your .vsct files. Essential for extension authors.</Description>
         <MoreInfo>https://github.com/madskristensen/CommandTableInfo/</MoreInfo>
         <License>Resources\LICENSE</License>
         <Icon>Resources\Icon.png</Icon>
         <PreviewImage>Resources\Icon.png</PreviewImage>
-        <Tags>vsix, commands, groups, menus</Tags>
+        <Tags>vsix, extensibility, commands, menus, toolbars, vsct, command table, groups</Tags>
     </Metadata>
     <Installation>
         <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[17.0,)">
