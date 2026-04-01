@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Runtime.InteropServices;
 using Microsoft.VisualStudio.Imaging;
 using Microsoft.VisualStudio.Shell;
@@ -15,13 +15,13 @@ namespace CommandTableInfo.ToolWindows
             : this(null)
         { }
 
-        public CommandTableWindow(CommandTableExplorerDTO state)
+        public CommandTableWindow(object state)
             : base()
         {
             Caption = Title;
             BitmapImageMoniker = KnownMonikers.CommandUIOption;
 
-            var elm = new CommandTableExplorerControl(state);
+            var elm = new CommandTableExplorerControl(state as CommandTableExplorerDTO);
             Content = elm;
         }
     }

@@ -26,5 +26,12 @@ namespace CommandTableInfo
     internal sealed partial class PackageIds
     {
         public const int ShowToolWindowId = 0x0200;
+        public const int CopyContextValueId = 0x0300;
+        public const int CopyVsctSymbolsId = 0x0301;
+        public const int DetailsContextMenu = 0x1000;
+        public const int HierarchyContextMenu = 0x1001;
+        public const int DetailsContextMenuGroup = 0x1100;
+        public const int HierarchyContextMenuGroup = 0x1200;
+        public const int HierarchyContextMenuVsctSymbolsGroup = 0x1201;
     }
 }

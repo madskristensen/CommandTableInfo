@@ -4,6 +4,8 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
+using CommandTableInfo.Commands;
+using CommandTableInfo.Services;
 using CommandTableInfo.ToolWindows;
 using EnvDTE;
 using EnvDTE80;
@@ -25,6 +27,7 @@ namespace CommandTableInfo
         {
             await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
             await ShowToolWindow.InitializeAsync(this);
+            await ContextMenuCommands.InitializeAsync(this);
         }
 
         public override IVsAsyncToolWindowFactory GetAsyncToolWindowFactory(Guid toolWindowType)
@@ -52,6 +55,8 @@ namespace CommandTableInfo
             await JoinableTaskFactory.SwitchToMainThreadAsync();
 
             var dte = await GetServiceAsync(typeof(DTE)) as DTE2;
+            var profferCommands = await GetServiceAsync(typeof(SVsProfferCommands)) as IVsProfferCommands3;
+            var uiShell = await GetServiceAsync(typeof(SVsUIShell)) as IVsUIShell;
             Assumes.Present(dte);
 
             var dto = new CommandTableExplorerDTO();
@@ -66,6 +71,8 @@ namespace CommandTableInfo
             }
 
             dto.DTE = dte;
+            dto.VsUiShell = uiShell;
+            dto.CommandHierarchyService = new CommandHierarchyService(dte, profferCommands);
             dto.DteCommands = dteCommands
                 .OrderBy(c => c.Name, StringComparer.OrdinalIgnoreCase)
                 .ToList();

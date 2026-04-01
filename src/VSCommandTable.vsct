@@ -1,28 +1,98 @@
 <?xml version="1.0" encoding="utf-8"?>
 <CommandTable xmlns="http://schemas.microsoft.com/VisualStudio/2005-10-18/CommandTable" xmlns:xs="http://www.w3.org/2001/XMLSchema">
 
-  <Extern href="stdidcmd.h"/>
-  <Extern href="vsshlids.h"/>
-  <Include href="KnownImageIds.vsct"/>
+	<Extern href="stdidcmd.h"/>
+	<Extern href="vsshlids.h"/>
+	<Include href="KnownImageIds.vsct"/>
 
-  <Commands package="guidCommandTablePackage">
-    <Buttons>
-      <Button guid="guidCommandTablePackageCmdSet" id="ShowToolWindowId" priority="0x0101" type="Button">
-        <Parent guid="guidSHLMainMenu" id="IDG_VS_WNDO_OTRWNDWS2"/>
-        <Icon guid="ImageCatalogGuid" id="CommandUIOption"/>
-        <CommandFlag>IconIsMoniker</CommandFlag>
-        <Strings>
-          <ButtonText>Command Explorer</ButtonText>
-        </Strings>
-      </Button>
-    </Buttons>
-  </Commands>
+	<Commands package="guidCommandTablePackage">
+		<Menus>
+			<Menu guid="guidCommandTablePackageCmdSet" id="DetailsContextMenu" type="Context">
+				<Strings>
+					<CommandName>Details</CommandName>
+				</Strings>
+			</Menu>
+			<Menu guid="guidCommandTablePackageCmdSet" id="HierarchyContextMenu" type="Context">
+				<Strings>
+					<CommandName>Hierarchy</CommandName>
+				</Strings>
+			</Menu>
+		</Menus>
 
-  <Symbols>
-    <GuidSymbol name="guidCommandTablePackage" value="{82d76b14-dcc0-423c-8b05-bac944909ebd}" />
+		<Groups>
+			<Group guid="guidCommandTablePackageCmdSet" id="DetailsContextMenuGroup" priority="0x0100">
+				<Parent guid="guidCommandTablePackageCmdSet" id="DetailsContextMenu" />
+			</Group>
+			<Group guid="guidCommandTablePackageCmdSet" id="HierarchyContextMenuGroup" priority="0x0100">
+				<Parent guid="guidCommandTablePackageCmdSet" id="HierarchyContextMenu" />
+			</Group>
+			<Group guid="guidCommandTablePackageCmdSet" id="HierarchyContextMenuVsctSymbolsGroup" priority="0x0200">
+				<Parent guid="guidCommandTablePackageCmdSet" id="HierarchyContextMenu" />
+			</Group>
+		</Groups>
 
-    <GuidSymbol name="guidCommandTablePackageCmdSet" value="{a5bb06f5-7f0a-4194-b06f-0bb25d48f268}">
-      <IDSymbol name="ShowToolWindowId" value="0x0200" />
-    </GuidSymbol>
-  </Symbols>
+		<Buttons>
+			<Button guid="guidCommandTablePackageCmdSet" id="ShowToolWindowId" priority="0x0101" type="Button">
+				<Parent guid="guidSHLMainMenu" id="IDG_VS_WNDO_OTRWNDWS2"/>
+				<Icon guid="ImageCatalogGuid" id="CommandUIOption"/>
+				<CommandFlag>IconIsMoniker</CommandFlag>
+				<Strings>
+					<ButtonText>Command Explorer</ButtonText>
+				</Strings>
+			</Button>
+
+			<Button guid="guidCommandTablePackageCmdSet" id="CopyContextValueId" priority="0x0100" type="Button">
+				<Parent guid="guidCommandTablePackageCmdSet" id="DetailsContextMenuGroup" />
+				<Icon guid="ImageCatalogGuid" id="Copy"/>
+				<CommandFlag>DynamicVisibility</CommandFlag>
+				<CommandFlag>DontCache</CommandFlag>
+				<CommandFlag>IconIsMoniker</CommandFlag>
+				<Strings>
+					<ButtonText>Copy</ButtonText>
+					<LocCanonicalName>.CommandExplorer.CopyContextValue</LocCanonicalName>
+				</Strings>
+			</Button>
+
+			<Button guid="guidCommandTablePackageCmdSet" id="CopyContextValueId" priority="0x0100" type="Button">
+				<Parent guid="guidCommandTablePackageCmdSet" id="HierarchyContextMenuGroup" />
+				<Icon guid="ImageCatalogGuid" id="Copy"/>
+				<CommandFlag>DynamicVisibility</CommandFlag>
+				<CommandFlag>DontCache</CommandFlag>
+				<CommandFlag>IconIsMoniker</CommandFlag>
+				<Strings>
+					<ButtonText>Copy</ButtonText>
+					<LocCanonicalName>.CommandExplorer.CopyNodeValue</LocCanonicalName>
+				</Strings>
+			</Button>
+
+			<Button guid="guidCommandTablePackageCmdSet" id="CopyVsctSymbolsId" priority="0x0100" type="Button">
+				<Parent guid="guidCommandTablePackageCmdSet" id="HierarchyContextMenuVsctSymbolsGroup" />
+				<Icon guid="ImageCatalogGuid" id="MarkupXML"/>
+				<CommandFlag>DynamicVisibility</CommandFlag>
+				<CommandFlag>DontCache</CommandFlag>
+				<CommandFlag>IconIsMoniker</CommandFlag>
+				<Strings>
+					<ButtonText>Copy VSCT Guid/ID symbols</ButtonText>
+					<LocCanonicalName>.CommandExplorer.CopyVsctSymbols</LocCanonicalName>
+				</Strings>
+			</Button>
+		</Buttons>
+	</Commands>
+
+	<Symbols>
+		<GuidSymbol name="guidCommandTablePackage" value="{82d76b14-dcc0-423c-8b05-bac944909ebd}" />
+
+		<GuidSymbol name="guidCommandTablePackageCmdSet" value="{a5bb06f5-7f0a-4194-b06f-0bb25d48f268}">
+			<IDSymbol name="ShowToolWindowId" value="0x0200" />
+			<IDSymbol name="CopyContextValueId" value="0x0300" />
+			<IDSymbol name="CopyVsctSymbolsId" value="0x0301" />
+
+			<IDSymbol name="DetailsContextMenu" value="0x1000" />
+			<IDSymbol name="HierarchyContextMenu" value="0x1001" />
+
+			<IDSymbol name="DetailsContextMenuGroup" value="0x1100" />
+			<IDSymbol name="HierarchyContextMenuGroup" value="0x1200" />
+			<IDSymbol name="HierarchyContextMenuVsctSymbolsGroup" value="0x1201" />
+		</GuidSymbol>
+	</Symbols>
 </CommandTable>
