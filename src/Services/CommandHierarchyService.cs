@@ -184,18 +184,19 @@ namespace CommandTableInfo.Services
 
             foreach (CommandBar commandBar in commandBars)
             {
-                var root = new List<HierarchyNode>
+                var path = new List<HierarchyNode>
                 {
                     new HierarchyNode(commandBar.Name, null, null)
                 };
 
-                TraverseControlsForIndex(commandBar.Controls, root);
+                TraverseControlsForIndex(commandBar.Controls, path);
+                path.RemoveAt(path.Count - 1);
             }
 
             _hierarchyIndexBuilt = true;
         }
 
-        private void TraverseControlsForIndex(CommandBarControls controls, IList<HierarchyNode> path)
+        private void TraverseControlsForIndex(CommandBarControls controls, List<HierarchyNode> path)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
 
@@ -218,17 +219,19 @@ namespace CommandTableInfo.Services
                 }
 
                 HierarchyNode node = CreateNode(control);
-                var currentPath = new List<HierarchyNode>(path) { node };
+                path.Add(node);
 
                 if (node.Guid.HasValue && node.Id.HasValue)
                 {
-                    AddIndexedPath(node, currentPath);
+                    AddIndexedPath(node, path);
                 }
 
                 if (control is CommandBarPopup popup)
                 {
-                    TraverseControlsForIndex(popup.CommandBar?.Controls, currentPath);
+                    TraverseControlsForIndex(popup.CommandBar?.Controls, path);
                 }
+
+                path.RemoveAt(path.Count - 1);
             }
         }
 

@@ -52,7 +52,7 @@ namespace CommandTableInfo
 
         protected override async Task<object> InitializeToolWindowAsync(Type toolWindowType, int id, CancellationToken cancellationToken)
         {
-            await JoinableTaskFactory.SwitchToMainThreadAsync();
+            await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
 
             var dte = await GetServiceAsync(typeof(DTE)) as DTE2;
             var profferCommands = await GetServiceAsync(typeof(SVsProfferCommands)) as IVsProfferCommands3;

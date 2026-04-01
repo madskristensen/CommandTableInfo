@@ -28,6 +28,7 @@ namespace CommandTableInfo.ToolWindows
         private readonly EnvDTE.CommandEvents _cmdEvents;
         private readonly Dictionary<EnvDTE.Command, CommandSearchIndex> _searchIndex;
         private readonly Dictionary<string, EnvDTE.Command> _commandByName;
+        private readonly Dictionary<string, EnvDTE.Command> _commandByGuidId;
         private EnvDTE.Command _selectedCommand;
         private string _hierarchyCopyText;
         private bool _hasUsedInspectMode;
@@ -46,11 +47,18 @@ namespace CommandTableInfo.ToolWindows
         internal CommandTableExplorerControl(CommandTableExplorerDTO dto)
         {
             Microsoft.VisualStudio.Shell.ThreadHelper.ThrowIfNotOnUIThread();
+
+            if (dto == null)
+            {
+                throw new ArgumentNullException(nameof(dto));
+            }
+
             _dto = dto;
             _cmdEvents = dto.DTE.Events.CommandEvents;
             Commands = _dto.DteCommands;
             _searchIndex = new Dictionary<EnvDTE.Command, CommandSearchIndex>();
             _commandByName = new Dictionary<string, EnvDTE.Command>(StringComparer.OrdinalIgnoreCase);
+            _commandByGuidId = new Dictionary<string, EnvDTE.Command>(StringComparer.OrdinalIgnoreCase);
             _cachedFilterText = string.Empty;
             _cachedNormalizedFilterText = string.Empty;
             _cachedHexFilterText = string.Empty;
@@ -66,6 +74,13 @@ namespace CommandTableInfo.ToolWindows
                 if (!_commandByName.ContainsKey(command.Name))
                 {
                     _commandByName.Add(command.Name, command);
+                }
+
+                string guidIdKey = command.Guid + ":" + command.ID.ToString(CultureInfo.InvariantCulture);
+
+                if (!_commandByGuidId.ContainsKey(guidIdKey))
+                {
+                    _commandByGuidId.Add(guidIdKey, command);
                 }
             }
 
@@ -177,9 +192,14 @@ namespace CommandTableInfo.ToolWindows
 
         private void CancelSelectionDetailsLoad()
         {
-            _selectionDetailsCancellationTokenSource?.Cancel();
-            _selectionDetailsCancellationTokenSource?.Dispose();
+            var cts = _selectionDetailsCancellationTokenSource;
             _selectionDetailsCancellationTokenSource = null;
+
+            if (cts != null)
+            {
+                cts.Cancel();
+                cts.Dispose();
+            }
         }
 
         private static IEnumerable<string> GetBindings(IEnumerable<object> bindings)
@@ -749,7 +769,7 @@ namespace CommandTableInfo.ToolWindows
             _refreshCancellationTokenSource?.Dispose();
             _refreshCancellationTokenSource = new CancellationTokenSource();
 
-            _ = RefreshAsync(text, _refreshCancellationTokenSource.Token);
+            _ = Microsoft.VisualStudio.Shell.ThreadHelper.JoinableTaskFactory.RunAsync(() => RefreshAsync(text, _refreshCancellationTokenSource.Token));
         }
 
         private async Task RefreshAsync(string text, CancellationToken cancellationToken)
@@ -814,7 +834,8 @@ namespace CommandTableInfo.ToolWindows
                 (Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl)))
             {
                 CancelDefault = true;
-                EnvDTE.Command cmd = _dto.DteCommands.FirstOrDefault(c => { Microsoft.VisualStudio.Shell.ThreadHelper.ThrowIfNotOnUIThread(); return c.Guid == Guid && c.ID == ID; });
+                string lookupKey = Guid + ":" + ID.ToString(CultureInfo.InvariantCulture);
+                _commandByGuidId.TryGetValue(lookupKey, out EnvDTE.Command cmd);
 
                 if (cmd != null)
                 {
