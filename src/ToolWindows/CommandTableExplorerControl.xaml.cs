@@ -34,6 +34,7 @@ namespace CommandTableInfo.ToolWindows
         private CollectionView _view;
         private bool _isDisposed;
         private CancellationTokenSource _refreshCancellationTokenSource;
+        private CancellationTokenSource _selectionDetailsCancellationTokenSource;
         private string _cachedFilterText;
         private string _cachedNormalizedFilterText;
         private string _cachedHexFilterText;
@@ -86,34 +87,85 @@ namespace CommandTableInfo.ToolWindows
 
         }
 
-        private void OnSelectionChanged(object sender, SelectionChangedEventArgs e)
+        private async void OnSelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            Microsoft.VisualStudio.Shell.ThreadHelper.ThrowIfNotOnUIThread();
+            await Microsoft.VisualStudio.Shell.ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+            if (_isDisposed)
+            {
+                return;
+            }
+
             var cmd = (EnvDTE.Command)list.SelectedValue;
+
+            CancelSelectionDetailsLoad();
 
             ResetDetails();
 
-            if (cmd != null)
+            if (cmd == null)
             {
-                _selectedCommand = cmd;
-                txtName.Content = cmd.Name;
-                txtGuid.Text = FormatGuidValue(cmd.Guid);
-                txtId.Text = FormatIdValue(cmd.Guid, cmd.ID);
-                txtGuid.Tag = cmd.Guid;
-                txtId.Tag = "0x" + cmd.ID.ToString("x", CultureInfo.InvariantCulture) + " (" + cmd.ID.ToString(CultureInfo.InvariantCulture) + ")";
-                txtGuidId.Text = string.Format(CultureInfo.InvariantCulture, "{0}:0x{1} ({2})", cmd.Guid, cmd.ID.ToString("x", CultureInfo.InvariantCulture), cmd.ID.ToString(CultureInfo.InvariantCulture));
-                txtGuidId.Tag = string.Format(CultureInfo.InvariantCulture, "{0}:0x{1}", cmd.Guid, cmd.ID.ToString("x", CultureInfo.InvariantCulture));
-                txtBindings.Text = string.Join(Environment.NewLine, GetBindings(cmd.Bindings as object[]));
+                return;
+            }
 
-                CommandHierarchyInfo hierarchy = _dto.CommandHierarchyService?.GetHierarchy(cmd) ?? CommandHierarchyInfo.Empty;
+            _selectedCommand = cmd;
+            txtName.Content = cmd.Name;
+            txtGuid.Text = FormatGuidValue(cmd.Guid);
+            txtId.Text = FormatIdValue(cmd.Guid, cmd.ID);
+            txtGuid.Tag = cmd.Guid;
+            txtId.Tag = "0x" + cmd.ID.ToString("x", CultureInfo.InvariantCulture) + " (" + cmd.ID.ToString(CultureInfo.InvariantCulture) + ")";
+            txtGuidId.Text = string.Format(CultureInfo.InvariantCulture, "{0}:0x{1} ({2})", cmd.Guid, cmd.ID.ToString("x", CultureInfo.InvariantCulture), cmd.ID.ToString(CultureInfo.InvariantCulture));
+            txtGuidId.Tag = string.Format(CultureInfo.InvariantCulture, "{0}:0x{1}", cmd.Guid, cmd.ID.ToString("x", CultureInfo.InvariantCulture));
+            txtBindings.Text = string.Join(Environment.NewLine, GetBindings(cmd.Bindings as object[]));
+            txtDisplayName.Text = "loading...";
+            txtButtonText.Text = "loading...";
+            treeHierarchy.ItemsSource = new[] { new HierarchyTreeNode("loading...") };
+            details.Visibility = Visibility.Visible;
+
+            var cancellationTokenSource = new CancellationTokenSource();
+            _selectionDetailsCancellationTokenSource = cancellationTokenSource;
+
+            try
+            {
+                CommandHierarchyInfo hierarchy = _dto.CommandHierarchyService == null
+                    ? CommandHierarchyInfo.Empty
+                    : await _dto.CommandHierarchyService.GetHierarchyAsync(cmd, cancellationTokenSource.Token);
+
+                await Microsoft.VisualStudio.Shell.ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync(cancellationTokenSource.Token);
+
+                if (_isDisposed || cancellationTokenSource.IsCancellationRequested || !ReferenceEquals(_selectedCommand, cmd))
+                {
+                    return;
+                }
+
                 txtDisplayName.Text = hierarchy.DisplayName;
                 txtButtonText.Text = hierarchy.ButtonText;
                 _hierarchyCopyText = hierarchy.HierarchyCopyText;
                 treeHierarchy.ItemsSource = BuildHierarchyTree(hierarchy.HierarchyText);
+            }
+            catch (OperationCanceledException)
+            {
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.Write(ex);
+            }
+            finally
+            {
+                if (ReferenceEquals(_selectionDetailsCancellationTokenSource, cancellationTokenSource))
+                {
+                    _selectionDetailsCancellationTokenSource = null;
+                }
 
-                details.Visibility = Visibility.Visible;
+                cancellationTokenSource.Dispose();
             }
 
+        }
+
+        private void CancelSelectionDetailsLoad()
+        {
+            _selectionDetailsCancellationTokenSource?.Cancel();
+            _selectionDetailsCancellationTokenSource?.Dispose();
+            _selectionDetailsCancellationTokenSource = null;
         }
 
         private static IEnumerable<string> GetBindings(IEnumerable<object> bindings)
@@ -936,6 +988,7 @@ namespace CommandTableInfo.ToolWindows
                 _refreshCancellationTokenSource?.Cancel();
                 _refreshCancellationTokenSource?.Dispose();
                 _refreshCancellationTokenSource = null;
+                CancelSelectionDetailsLoad();
 
                 if (ReferenceEquals(_contextMenuSourceControl, this))
                 {

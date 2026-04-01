@@ -9,12 +9,14 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace CommandTableInfo.Services
 {
     public interface ICommandHierarchyService
     {
-        CommandHierarchyInfo GetHierarchy(Command command);
+        Task<CommandHierarchyInfo> GetHierarchyAsync(Command command, CancellationToken cancellationToken);
     }
 
     public sealed class CommandHierarchyInfo
@@ -44,6 +46,8 @@ namespace CommandTableInfo.Services
         private readonly Commands2 _commands;
         private readonly IVsProfferCommands3 _profferCommands;
         private readonly Dictionary<CommandKey, CommandHierarchyInfo> _cache = new Dictionary<CommandKey, CommandHierarchyInfo>();
+        private readonly Dictionary<CommandKey, HierarchyAccumulator> _hierarchyLookup = new Dictionary<CommandKey, HierarchyAccumulator>();
+        private bool _hierarchyIndexBuilt;
 
         public CommandHierarchyService(DTE2 dte, IVsProfferCommands3 profferCommands)
         {
@@ -53,7 +57,13 @@ namespace CommandTableInfo.Services
             _profferCommands = profferCommands;
         }
 
-        public CommandHierarchyInfo GetHierarchy(Command command)
+        public async Task<CommandHierarchyInfo> GetHierarchyAsync(Command command, CancellationToken cancellationToken)
+        {
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
+            return GetHierarchyCore(command);
+        }
+
+        private CommandHierarchyInfo GetHierarchyCore(Command command)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
             if (command == null)
@@ -61,7 +71,7 @@ namespace CommandTableInfo.Services
                 return CommandHierarchyInfo.Empty;
             }
 
-            var key = new CommandKey(command.Guid ?? string.Empty, command.ID);
+            var key = CreateCommandKey(command);
 
             if (_cache.TryGetValue(key, out CommandHierarchyInfo cached))
             {
@@ -72,8 +82,29 @@ namespace CommandTableInfo.Services
             var buttonTexts = new List<string>();
             var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             var seenButtonTexts = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            EnsureHierarchyIndexBuilt();
+
+            if (_hierarchyLookup.TryGetValue(key, out HierarchyAccumulator accumulator))
+            {
+                foreach (string path in accumulator.Paths)
+                {
+                    if (seen.Add(path))
+                    {
+                        paths.Add(path);
+                    }
+                }
+
+                foreach (string cachedButtonText in accumulator.ButtonTexts)
+                {
+                    if (seenButtonTexts.Add(cachedButtonText))
+                    {
+                        buttonTexts.Add(cachedButtonText);
+                    }
+                }
+            }
+
             Guid.TryParse(command.Guid, out Guid commandSet);
-            EnumerateCommandBars(command, commandSet, paths, seen, buttonTexts, seenButtonTexts);
             TryAddFindCommandBarPath(command, commandSet, paths, seen);
 
             string displayName = GetDisplayName(command);
@@ -101,13 +132,20 @@ namespace CommandTableInfo.Services
             return info;
         }
 
-        private void EnumerateCommandBars(Command command, Guid commandSet, IList<string> paths, ISet<string> seen, IList<string> buttonTexts, ISet<string> seenButtonTexts)
+        private void EnsureHierarchyIndexBuilt()
         {
             ThreadHelper.ThrowIfNotOnUIThread();
+
+            if (_hierarchyIndexBuilt)
+            {
+                return;
+            }
+
             var commandBars = _dte.CommandBars as CommandBars;
 
             if (commandBars == null)
             {
+                _hierarchyIndexBuilt = true;
                 return;
             }
 
@@ -118,11 +156,13 @@ namespace CommandTableInfo.Services
                     new HierarchyNode(commandBar.Name, null, null)
                 };
 
-                TraverseControls(commandBar.Controls, root, commandSet, command.ID, paths, seen, buttonTexts, seenButtonTexts);
+                TraverseControlsForIndex(commandBar.Controls, root);
             }
+
+            _hierarchyIndexBuilt = true;
         }
 
-        private void TraverseControls(CommandBarControls controls, IList<HierarchyNode> path, Guid commandSet, int commandId, IList<string> paths, ISet<string> seen, IList<string> buttonTexts, ISet<string> seenButtonTexts)
+        private void TraverseControlsForIndex(CommandBarControls controls, IList<HierarchyNode> path)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
 
@@ -147,23 +187,35 @@ namespace CommandTableInfo.Services
                 HierarchyNode node = CreateNode(control);
                 var currentPath = new List<HierarchyNode>(path) { node };
 
-                if (node.Guid.HasValue &&
-                    node.Guid.Value == commandSet &&
-                    node.Id.HasValue &&
-                    node.Id.Value == commandId)
+                if (node.Guid.HasValue && node.Id.HasValue)
                 {
-                    AddPath(paths, seen, currentPath);
-
-                    if (!string.IsNullOrWhiteSpace(node.Label) && seenButtonTexts.Add(node.Label))
-                    {
-                        buttonTexts.Add(node.Label);
-                    }
+                    AddIndexedPath(node, currentPath);
                 }
 
                 if (control is CommandBarPopup popup)
                 {
-                    TraverseControls(popup.CommandBar?.Controls, currentPath, commandSet, commandId, paths, seen, buttonTexts, seenButtonTexts);
+                    TraverseControlsForIndex(popup.CommandBar?.Controls, currentPath);
                 }
+            }
+        }
+
+        private void AddIndexedPath(HierarchyNode node, IEnumerable<HierarchyNode> path)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+
+            var key = new CommandKey(node.Guid.Value.ToString("D"), node.Id.Value);
+
+            if (!_hierarchyLookup.TryGetValue(key, out HierarchyAccumulator accumulator))
+            {
+                accumulator = new HierarchyAccumulator();
+                _hierarchyLookup[key] = accumulator;
+            }
+
+            accumulator.AddPath(string.Join(" > ", path.Select(FormatNode)));
+
+            if (!string.IsNullOrWhiteSpace(node.Label))
+            {
+                accumulator.AddButtonText(node.Label);
             }
         }
 
@@ -260,6 +312,23 @@ namespace CommandTableInfo.Services
             return string.Format(CultureInfo.InvariantCulture, "0x{0} ({1})", id.ToString("x", CultureInfo.InvariantCulture), id.ToString(CultureInfo.InvariantCulture));
         }
 
+        private static CommandKey CreateCommandKey(Command command)
+        {
+            if (command == null)
+            {
+                return new CommandKey(string.Empty, 0);
+            }
+
+            string guidText = command.Guid ?? string.Empty;
+
+            if (Guid.TryParse(guidText, out Guid guid))
+            {
+                guidText = guid.ToString("D");
+            }
+
+            return new CommandKey(guidText, command.ID);
+        }
+
         private struct CommandKey : IEquatable<CommandKey>
         {
             public CommandKey(string guid, int id)
@@ -305,6 +374,48 @@ namespace CommandTableInfo.Services
             public Guid? Guid { get; }
 
             public int? Id { get; }
+        }
+
+        private sealed class HierarchyAccumulator
+        {
+            private readonly HashSet<string> _seenPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            private readonly HashSet<string> _seenButtonTexts = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            public HierarchyAccumulator()
+            {
+                Paths = new List<string>();
+                ButtonTexts = new List<string>();
+            }
+
+            public IList<string> Paths { get; }
+
+            public IList<string> ButtonTexts { get; }
+
+            public void AddPath(string path)
+            {
+                if (string.IsNullOrWhiteSpace(path))
+                {
+                    return;
+                }
+
+                if (_seenPaths.Add(path))
+                {
+                    Paths.Add(path);
+                }
+            }
+
+            public void AddButtonText(string text)
+            {
+                if (string.IsNullOrWhiteSpace(text))
+                {
+                    return;
+                }
+
+                if (_seenButtonTexts.Add(text))
+                {
+                    ButtonTexts.Add(text);
+                }
+            }
         }
     }
 }
