@@ -41,6 +41,7 @@ namespace CommandTableInfo.ToolWindows
         private string _cachedNormalizedBindingFilterText;
         private FrameworkElement _contextMenuPlacementTarget;
         private HierarchyTreeNode _contextMenuHierarchyNode;
+        private Task _preBuildTask;
 
         internal CommandTableExplorerControl(CommandTableExplorerDTO dto)
         {
@@ -66,6 +67,13 @@ namespace CommandTableInfo.ToolWindows
                 {
                     _commandByName.Add(command.Name, command);
                 }
+            }
+
+            // Start eagerly pre-building hierarchy index and owner map in the background
+            // so the first command selection doesn't have to wait for the full traversal.
+            if (_dto.CommandHierarchyService != null)
+            {
+                _preBuildTask = _dto.CommandHierarchyService.PreBuildAsync(CancellationToken.None);
             }
 
             DataContext = this;
@@ -113,11 +121,10 @@ namespace CommandTableInfo.ToolWindows
             txtId.Text = FormatIdValue(cmd.Guid, cmd.ID);
             txtGuid.Tag = cmd.Guid;
             txtId.Tag = "0x" + cmd.ID.ToString("x", CultureInfo.InvariantCulture) + " (" + cmd.ID.ToString(CultureInfo.InvariantCulture) + ")";
-            txtGuidId.Text = string.Format(CultureInfo.InvariantCulture, "{0}:0x{1} ({2})", cmd.Guid, cmd.ID.ToString("x", CultureInfo.InvariantCulture), cmd.ID.ToString(CultureInfo.InvariantCulture));
-            txtGuidId.Tag = string.Format(CultureInfo.InvariantCulture, "{0}:0x{1}", cmd.Guid, cmd.ID.ToString("x", CultureInfo.InvariantCulture));
             txtBindings.Text = string.Join(Environment.NewLine, GetBindings(cmd.Bindings as object[]));
             txtDisplayName.Text = "loading...";
             txtButtonText.Text = "loading...";
+            txtOwner.Text = "loading...";
             treeHierarchy.ItemsSource = new[] { new HierarchyTreeNode("loading...") };
             details.Visibility = Visibility.Visible;
 
@@ -126,6 +133,12 @@ namespace CommandTableInfo.ToolWindows
 
             try
             {
+                // Wait for background pre-build to complete so hierarchy and owner caches are warm
+                if (_preBuildTask != null)
+                {
+                    await _preBuildTask;
+                }
+
                 CommandHierarchyInfo hierarchy = _dto.CommandHierarchyService == null
                     ? CommandHierarchyInfo.Empty
                     : await _dto.CommandHierarchyService.GetHierarchyAsync(cmd, cancellationTokenSource.Token);
@@ -139,6 +152,7 @@ namespace CommandTableInfo.ToolWindows
 
                 txtDisplayName.Text = hierarchy.DisplayName;
                 txtButtonText.Text = hierarchy.ButtonText;
+                txtOwner.Text = !string.IsNullOrWhiteSpace(hierarchy.OwnerPackageName) ? hierarchy.OwnerPackageName : "n/a";
                 _hierarchyCopyText = hierarchy.HierarchyCopyText;
                 treeHierarchy.ItemsSource = BuildHierarchyTree(hierarchy.HierarchyText);
             }
@@ -179,12 +193,25 @@ namespace CommandTableInfo.ToolWindows
                 .Where(binding => binding != null)
                 .Select(binding => binding.ToString())
                 .Where(binding => !string.IsNullOrWhiteSpace(binding))
-                .Select(binding => binding.IndexOf("::", StringComparison.Ordinal) >= 0
-                    ? binding.Substring(binding.IndexOf("::", StringComparison.Ordinal) + 2)
-                    : binding)
+                .Select(FormatBindingWithScope)
                 .Distinct(StringComparer.OrdinalIgnoreCase);
 
             return result;
+        }
+
+        private static string FormatBindingWithScope(string binding)
+        {
+            int separatorIndex = binding.IndexOf("::", StringComparison.Ordinal);
+
+            if (separatorIndex >= 0)
+            {
+                string scope = binding.Substring(0, separatorIndex).Trim();
+                string shortcut = binding.Substring(separatorIndex + 2).Trim();
+
+                return string.Format(CultureInfo.InvariantCulture, "{0} ({1})", shortcut, scope);
+            }
+
+            return binding;
         }
 
         private bool UserFilter(object item)
@@ -964,15 +991,14 @@ namespace CommandTableInfo.ToolWindows
             txtName.Content = "loading...";
             txtGuid.Text = "n/a";
             txtId.Text = "n/a";
-            txtGuidId.Text = "n/a";
             txtDisplayName.Text = "n/a";
             txtButtonText.Text = "n/a";
             txtBindings.Text = "n/a";
+            txtOwner.Text = "n/a";
             _hierarchyCopyText = string.Empty;
             treeHierarchy.ItemsSource = BuildHierarchyTree(CommandHierarchyInfo.Empty.HierarchyText);
             txtGuid.Tag = null;
             txtId.Tag = null;
-            txtGuidId.Tag = null;
             _selectedCommand = null;
 
             details.Visibility = Visibility.Hidden;

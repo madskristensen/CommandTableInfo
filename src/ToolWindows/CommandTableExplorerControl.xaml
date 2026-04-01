@@ -124,7 +124,7 @@
                           Content="Inspect mode"
                           VerticalContentAlignment="Center" VerticalAlignment="Center"
                           Margin="10,0,0,0"
-                          Padding="0"
+                          Padding="3, 0, 0, 0"
                           Unchecked="CheckBox_Checked" Checked="CheckBox_Checked"/>
             </Grid>
 
@@ -205,14 +205,14 @@
                     <Label Grid.Row="0" Grid.Column="0" Content="Display name" Style="{StaticResource DetailLabelStyle}" />
                     <TextBox Grid.Row="0" Grid.Column="1" Name="txtDisplayName" Text="n/a" Style="{StaticResource DetailValueTextBoxStyle}" PreviewMouseRightButtonUp="DetailsTextBox_PreviewMouseRightButtonUp" />
 
-                    <Label Grid.Row="1" Grid.Column="0" Content="Guid" Style="{StaticResource DetailLabelStyle}" />
-                    <TextBox Grid.Row="1" Grid.Column="1" Name="txtGuid" Text="n/a" Style="{StaticResource DetailValueTextBoxStyle}" PreviewMouseRightButtonUp="DetailsTextBox_PreviewMouseRightButtonUp" />
+                    <Label Grid.Row="1" Grid.Column="0" Content="Owner" Style="{StaticResource DetailLabelStyle}" />
+                    <TextBox Grid.Row="1" Grid.Column="1" Name="txtOwner" Text="n/a" Style="{StaticResource DetailValueTextBoxStyle}" PreviewMouseRightButtonUp="DetailsTextBox_PreviewMouseRightButtonUp" />
 
-                    <Label Grid.Row="2" Grid.Column="0" Content="ID" Style="{StaticResource DetailLabelStyle}" />
-                    <TextBox Grid.Row="2" Grid.Column="1" Name="txtId" Text="n/a" Style="{StaticResource DetailValueTextBoxStyle}" PreviewMouseRightButtonUp="DetailsTextBox_PreviewMouseRightButtonUp" />
+                    <Label Grid.Row="2" Grid.Column="0" Content="Guid" Style="{StaticResource DetailLabelStyle}" />
+                    <TextBox Grid.Row="2" Grid.Column="1" Name="txtGuid" Text="n/a" Style="{StaticResource DetailValueTextBoxStyle}" PreviewMouseRightButtonUp="DetailsTextBox_PreviewMouseRightButtonUp" />
 
-                    <Label Grid.Row="3" Grid.Column="0" Content="Guid/ID pair" Style="{StaticResource DetailLabelStyle}" />
-                    <TextBox Grid.Row="3" Grid.Column="1" Name="txtGuidId" Text="n/a" Style="{StaticResource DetailValueTextBoxStyle}" PreviewMouseRightButtonUp="DetailsTextBox_PreviewMouseRightButtonUp" />
+                    <Label Grid.Row="3" Grid.Column="0" Content="ID" Style="{StaticResource DetailLabelStyle}" />
+                    <TextBox Grid.Row="3" Grid.Column="1" Name="txtId" Text="n/a" Style="{StaticResource DetailValueTextBoxStyle}" PreviewMouseRightButtonUp="DetailsTextBox_PreviewMouseRightButtonUp" />
 
                     <Label Grid.Row="4" Grid.Column="0" Content="Button text" Style="{StaticResource DetailLabelStyle}" />
                     <TextBox Grid.Row="4" Grid.Column="1" Name="txtButtonText" Text="n/a" Style="{StaticResource DetailValueTextBoxStyle}" AcceptsReturn="True" VerticalAlignment="Top" PreviewMouseRightButtonUp="DetailsTextBox_PreviewMouseRightButtonUp" />

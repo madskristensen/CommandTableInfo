@@ -4,6 +4,8 @@ using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.CommandBars;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
+using Microsoft.VisualStudio.Threading;
+using Microsoft.Win32;
 
 using System;
 using System.Collections.Generic;
@@ -17,18 +19,25 @@ namespace CommandTableInfo.Services
     public interface ICommandHierarchyService
     {
         Task<CommandHierarchyInfo> GetHierarchyAsync(Command command, CancellationToken cancellationToken);
+
+        /// <summary>
+        /// Eagerly pre-builds the hierarchy index and owner package map in the background
+        /// so that the first <see cref="GetHierarchyAsync"/> call does not block.
+        /// </summary>
+        Task PreBuildAsync(CancellationToken cancellationToken);
     }
 
     public sealed class CommandHierarchyInfo
     {
-        public static CommandHierarchyInfo Empty { get; } = new CommandHierarchyInfo("n/a", "n/a", "Not available in current UI context", string.Empty);
+        public static CommandHierarchyInfo Empty { get; } = new CommandHierarchyInfo("n/a", "n/a", "Not available in current UI context", string.Empty, null);
 
-        public CommandHierarchyInfo(string displayName, string buttonText, string hierarchyText, string hierarchyCopyText)
+        public CommandHierarchyInfo(string displayName, string buttonText, string hierarchyText, string hierarchyCopyText, string ownerPackageName)
         {
             DisplayName = displayName;
             ButtonText = buttonText;
             HierarchyText = hierarchyText;
             HierarchyCopyText = hierarchyCopyText;
+            OwnerPackageName = ownerPackageName;
         }
 
         public string DisplayName { get; }
@@ -38,6 +47,8 @@ namespace CommandTableInfo.Services
         public string HierarchyText { get; }
 
         public string HierarchyCopyText { get; }
+
+        public string OwnerPackageName { get; }
     }
 
     internal sealed class CommandHierarchyService : ICommandHierarchyService
@@ -45,16 +56,34 @@ namespace CommandTableInfo.Services
         private readonly DTE2 _dte;
         private readonly Commands2 _commands;
         private readonly IVsProfferCommands3 _profferCommands;
+        private readonly IVsShell _vsShell;
         private readonly Dictionary<CommandKey, CommandHierarchyInfo> _cache = new Dictionary<CommandKey, CommandHierarchyInfo>();
         private readonly Dictionary<CommandKey, HierarchyAccumulator> _hierarchyLookup = new Dictionary<CommandKey, HierarchyAccumulator>();
+        private Dictionary<Guid, string> _commandSetOwnerMap;
         private bool _hierarchyIndexBuilt;
 
-        public CommandHierarchyService(DTE2 dte, IVsProfferCommands3 profferCommands)
+        public CommandHierarchyService(DTE2 dte, IVsProfferCommands3 profferCommands, IVsShell vsShell)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
             _dte = dte;
             _commands = (Commands2)dte.Commands;
             _profferCommands = profferCommands;
+            _vsShell = vsShell;
+        }
+
+        public async Task PreBuildAsync(CancellationToken cancellationToken)
+        {
+            // Step 1: Traverse CommandBars on the UI thread (COM requirement)
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
+            EnsureHierarchyIndexBuilt();
+
+            // Capture the registry root path on the UI thread (VSRegistry uses COM internally)
+            string registryRootPath = GetRegistryRootPath();
+
+            // Step 2: Build the owner map on a background thread (registry I/O is thread-safe)
+            await TaskScheduler.Default;
+            cancellationToken.ThrowIfCancellationRequested();
+            BuildCommandSetOwnerMap(registryRootPath);
         }
 
         public async Task<CommandHierarchyInfo> GetHierarchyAsync(Command command, CancellationToken cancellationToken)
@@ -116,16 +145,18 @@ namespace CommandTableInfo.Services
 
             string buttonText = string.Join(Environment.NewLine, buttonTexts);
 
+            string ownerPackageName = ResolveOwnerPackageName(commandSet);
+
             CommandHierarchyInfo info;
 
             if (paths.Count == 0)
             {
-                info = new CommandHierarchyInfo(displayName, buttonText, CommandHierarchyInfo.Empty.HierarchyText, string.Empty);
+                info = new CommandHierarchyInfo(displayName, buttonText, CommandHierarchyInfo.Empty.HierarchyText, string.Empty, ownerPackageName);
             }
             else
             {
                 string joined = string.Join(Environment.NewLine, paths);
-                info = new CommandHierarchyInfo(displayName, buttonText, joined, joined);
+                info = new CommandHierarchyInfo(displayName, buttonText, joined, joined, ownerPackageName);
             }
 
             _cache[key] = info;
@@ -269,6 +300,217 @@ namespace CommandTableInfo.Services
                     paths.Add(path);
                 }
             }
+        }
+
+        private string ResolveOwnerPackageName(Guid commandSet)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+
+            if (commandSet == Guid.Empty)
+            {
+                return null;
+            }
+
+            EnsureCommandSetOwnerMap();
+
+            if (_commandSetOwnerMap.TryGetValue(commandSet, out string ownerName))
+            {
+                return ownerName;
+            }
+
+            return null;
+        }
+
+        private static string GetRegistryRootPath()
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+
+            try
+            {
+                using (RegistryKey rootKey = VSRegistry.RegistryRoot(__VsLocalRegistryType.RegType_Configuration, writable: false))
+                {
+                    return rootKey?.Name;
+                }
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        private void BuildCommandSetOwnerMap(string registryRootPath)
+        {
+            if (_commandSetOwnerMap != null)
+            {
+                return;
+            }
+
+            var map = new Dictionary<Guid, string>();
+
+            if (!string.IsNullOrEmpty(registryRootPath))
+            {
+                try
+                {
+                    BuildCommandSetOwnerMapFromRegistry(registryRootPath, map);
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.Write(ex);
+                }
+            }
+
+            _commandSetOwnerMap = map;
+        }
+
+        private static void BuildCommandSetOwnerMapFromRegistry(string registryRootPath, Dictionary<Guid, string> ownerMap)
+        {
+            // Parse hive and subkey from the full registry path
+            int firstBackslash = registryRootPath.IndexOf('\\');
+
+            if (firstBackslash < 0)
+            {
+                return;
+            }
+
+            string hiveName = registryRootPath.Substring(0, firstBackslash);
+            string subKeyPath = registryRootPath.Substring(firstBackslash + 1);
+            RegistryKey hive;
+
+            switch (hiveName)
+            {
+                case "HKEY_CURRENT_USER":
+                    hive = Registry.CurrentUser;
+                    break;
+                case "HKEY_LOCAL_MACHINE":
+                    hive = Registry.LocalMachine;
+                    break;
+                default:
+                    hive = Registry.CurrentUser;
+                    break;
+            }
+
+            using (RegistryKey rootKey = hive.OpenSubKey(subKeyPath, writable: false))
+            {
+                if (rootKey == null)
+                {
+                    return;
+                }
+
+                var packageNames = new Dictionary<Guid, string>();
+
+                using (RegistryKey packagesKey = rootKey.OpenSubKey("Packages"))
+                {
+                    if (packagesKey != null)
+                    {
+                        foreach (string pkgGuidStr in packagesKey.GetSubKeyNames())
+                        {
+                            if (!Guid.TryParse(pkgGuidStr, out Guid pkgGuid))
+                            {
+                                continue;
+                            }
+
+                            using (RegistryKey pkgKey = packagesKey.OpenSubKey(pkgGuidStr))
+                            {
+                                if (pkgKey == null)
+                                {
+                                    continue;
+                                }
+
+                                string name = pkgKey.GetValue("ProductName") as string
+                                           ?? pkgKey.GetValue("") as string;
+
+                                if (!string.IsNullOrWhiteSpace(name) && !name.StartsWith("#", StringComparison.Ordinal))
+                                {
+                                    packageNames[pkgGuid] = name;
+                                }
+                                else
+                                {
+                                    string className = pkgKey.GetValue("Class") as string;
+
+                                    if (!string.IsNullOrWhiteSpace(className))
+                                    {
+                                        int lastDot = className.LastIndexOf('.');
+                                        string shortName = lastDot >= 0 && lastDot < className.Length - 1
+                                            ? className.Substring(lastDot + 1)
+                                            : className;
+                                        packageNames[pkgGuid] = shortName;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                using (RegistryKey menusKey = rootKey.OpenSubKey("Menus"))
+                {
+                    if (menusKey != null)
+                    {
+                        foreach (string valueName in menusKey.GetValueNames())
+                        {
+                            if (!Guid.TryParse(valueName, out Guid pkgGuid))
+                            {
+                                continue;
+                            }
+
+                            if (!packageNames.TryGetValue(pkgGuid, out string pkgName))
+                            {
+                                continue;
+                            }
+
+                            string menuData = menusKey.GetValue(valueName) as string;
+
+                            if (string.IsNullOrWhiteSpace(menuData))
+                            {
+                                continue;
+                            }
+
+                            // Menus value format: ",resId,version" or "satellite,resId,version"
+                            // The package GUID itself is the value name; associate it as a potential command set owner
+                            if (!ownerMap.ContainsKey(pkgGuid))
+                            {
+                                ownerMap[pkgGuid] = pkgName;
+                            }
+                        }
+                    }
+                }
+
+                // Also scan for explicit command set GUID registrations under Packages\{pkg}\CmdSets or similar
+                using (RegistryKey packagesKey = rootKey.OpenSubKey("Packages"))
+                {
+                    if (packagesKey != null)
+                    {
+                        foreach (string pkgGuidStr in packagesKey.GetSubKeyNames())
+                        {
+                            if (!Guid.TryParse(pkgGuidStr, out Guid pkgGuid) || !packageNames.ContainsKey(pkgGuid))
+                            {
+                                continue;
+                            }
+
+                            // Many packages register their command set GUID equal to or near their package GUID.
+                            // We already map pkgGuid above via Menus. Now also check for explicit entries.
+                            string pkgName = packageNames[pkgGuid];
+
+                            if (!ownerMap.ContainsKey(pkgGuid))
+                            {
+                                ownerMap[pkgGuid] = pkgName;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        private void EnsureCommandSetOwnerMap()
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+
+            if (_commandSetOwnerMap != null)
+            {
+                return;
+            }
+
+            string registryRootPath = GetRegistryRootPath();
+            BuildCommandSetOwnerMap(registryRootPath);
         }
 
         private HierarchyNode CreateNode(CommandBarControl control)

@@ -57,6 +57,7 @@ namespace CommandTableInfo
             var dte = await GetServiceAsync(typeof(DTE)) as DTE2;
             var profferCommands = await GetServiceAsync(typeof(SVsProfferCommands)) as IVsProfferCommands3;
             var uiShell = await GetServiceAsync(typeof(SVsUIShell)) as IVsUIShell;
+            var vsShell = await GetServiceAsync(typeof(SVsShell)) as IVsShell;
             Assumes.Present(dte);
 
             var dto = new CommandTableExplorerDTO();
@@ -72,7 +73,7 @@ namespace CommandTableInfo
 
             dto.DTE = dte;
             dto.VsUiShell = uiShell;
-            dto.CommandHierarchyService = new CommandHierarchyService(dte, profferCommands);
+            dto.CommandHierarchyService = new CommandHierarchyService(dte, profferCommands, vsShell);
             dto.DteCommands = dteCommands
                 .OrderBy(c => c.Name, StringComparer.OrdinalIgnoreCase)
                 .ToList();
