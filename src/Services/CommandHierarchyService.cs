@@ -53,6 +53,8 @@ namespace CommandTableInfo.Services
 
     internal sealed class CommandHierarchyService : ICommandHierarchyService
     {
+        private static readonly Dictionary<Guid, string> WellKnownCommandSetOwners = CreateWellKnownCommandSetOwnerMap();
+
         private readonly DTE2 _dte;
         private readonly Commands2 _commands;
         private readonly IVsProfferCommands3 _profferCommands;
@@ -318,6 +320,11 @@ namespace CommandTableInfo.Services
                 return ownerName;
             }
 
+            if (WellKnownCommandSetOwners.TryGetValue(commandSet, out string wellKnownOwner))
+            {
+                return wellKnownOwner;
+            }
+
             return null;
         }
 
@@ -569,6 +576,85 @@ namespace CommandTableInfo.Services
             }
 
             return new CommandKey(guidText, command.ID);
+        }
+
+        private static Dictionary<Guid, string> CreateWellKnownCommandSetOwnerMap()
+        {
+            return new Dictionary<Guid, string>
+            {
+                // Standard command sets (shell)
+                { VSConstants.GUID_VSStandardCommandSet97, "Visual Studio (Standard97)" },
+                { VSConstants.VSStd2K, "Visual Studio (Standard2K)" },
+                { VSConstants.VsStd2010, "Visual Studio (Standard2010)" },
+                { VSConstants.VsStd11, "Visual Studio (Standard11)" },
+                { VSConstants.VsStd12, "Visual Studio (Standard12)" },
+                { VSConstants.VsStd14, "Visual Studio (Standard14)" },
+                { VSConstants.VsStd15, "Visual Studio (Standard15)" },
+                // Shell main menu (guidSHLMainMenu - menus, groups, toolbars)
+                { VSConstants.CMDSETID.ShellMainMenu_guid, "Visual Studio (Shell Main Menu)" },
+                // UI hierarchy commands
+                { VSConstants.GUID_VsUIHierarchyWindowCmds, "Visual Studio (UI Hierarchy)" },
+                // Environment package
+                { VSConstants.CLSID_VsEnvironmentPackage, "Visual Studio (Environment)" },
+                // Text editor
+                { VSConstants.GUID_TextEditorFactory, "Visual Studio (Text Editor)" },
+                // HTML editor
+                { VSConstants.CLSID_HtmedPackage, "Visual Studio (HTML Editor)" },
+                // Document outline
+                { VSConstants.CLSID_VsDocOutlinePackage, "Visual Studio (Document Outline)" },
+                // Task list
+                { VSConstants.CLSID_VsTaskListPackage, "Visual Studio (Task List)" },
+                // App command routing
+                { VSConstants.GUID_AppCommand, "Visual Studio (App Command)" },
+                // Solution Explorer pivot list
+                { VSConstants.CMDSETID.SolutionExplorerPivotList_guid, "Visual Studio (Solution Explorer)" },
+                // C# language commands
+                { VSConstants.CMDSETID.CSharpGroup_guid, "Visual Studio (C#)" },
+                // Debugger command sets (from VsDebugGuids.h)
+                { new Guid("c9dd4a58-47fb-11d2-83e7-00c04f9902c1"), "Visual Studio (Debugger)" },       // guidVSDebugGroup
+                { new Guid("c9dd4a59-47fb-11d2-83e7-00c04f9902c1"), "Visual Studio (Debugger)" },       // guidVSDebugCommand
+                // Shared commands (from sharedids.h)
+                { new Guid("8328592b-227c-11d3-b870-00c04f79f802"), "Visual Studio (Shared Commands)" }, // guidSharedCmd
+                // Common IDE package commands (from vsshlids.h)
+                { new Guid("6767e06b-5789-472b-8ed7-1f2073716e8c"), "Visual Studio (Common IDE)" },      // guidCommonIDEPackageCmd
+                // Shared menu group (from vsshlids.h)
+                { new Guid("234a7fc1-cfe9-4335-9e82-061f86e402c1"), "Visual Studio (Shared Menu)" },     // guidSharedMenuGroup
+                // Class View commands (from vsshlids.h)
+                { new Guid("fb61dcfe-c9cb-4964-8426-c2d38334078c"), "Visual Studio (Class View)" },      // guidClassViewMenu
+                // Data commands (from vsshlids.h)
+                { new Guid("501822e1-b5af-11d0-b4dc-00a0c91506ef"), "Visual Studio (Data)" },            // guidDataCmdId
+                { new Guid("4614107f-217d-4bbf-9dfe-b9e165c65572"), "Visual Studio (Data)" },            // guidVSData
+                // Server Explorer commands (from vsshlids.h)
+                { new Guid("74d21310-2aee-11d1-8bfb-00a0c90f26f7"), "Visual Studio (Server Explorer)" }, // guid_SE_MenuGroup
+                { new Guid("74d21311-2aee-11d1-8bfb-00a0c90f26f7"), "Visual Studio (Server Explorer)" }, // guid_SE_CommandID
+                // SQL Object Explorer (from vsshlids.h)
+                { new Guid("03f46784-2f90-4122-91ec-72ff9e11d9a3"), "Visual Studio (SQL)" },             // guidSqlObjectExplorerCmdSet
+                // Web Browser commands (from wbids.h)
+                { new Guid("e8b06f44-6d01-11d2-aa7d-00c04f990343"), "Visual Studio (Web Browser)" },     // guidWBPkgCmd
+                { new Guid("e8b06f42-6d01-11d2-aa7d-00c04f990343"), "Visual Studio (Web Browser)" },     // guidWBGrp
+                // Editor keybinding emulation command sets (from vsshlids.h)
+                { new Guid("9a95f3af-f86a-4aa2-80e6-012bf65dbbc3"), "Visual Studio (Emacs Emulation)" }, // guidEmacsCommandGroup
+                { new Guid("7a500d8a-8258-46c3-8965-6ac53ed6b4e7"), "Visual Studio (Brief Emulation)" }, // guidBriefCommandGroup
+                // Extension Manager (from vsshlids.h)
+                { new Guid("e7576c05-1874-450c-9e98-cf3a0897a069"), "Visual Studio (Extension Manager)" }, // guidExtensionManagerPkg
+                // Debug target handlers
+                { VSConstants.DebugTargetHandler.guidDebugTargetHandlerCmdSet, "Visual Studio (Debug Target)" },
+                { VSConstants.AppPackageDebugTargets.guidAppPackageDebugTargetCmdSet, "Visual Studio (App Package Debug)" },
+                // Razor (from RazorGuids.h)
+                { new Guid("5289d302-2432-4761-8c45-051c64bd00c4"), "Visual Studio (Razor)" },           // guidRazorCmdSet
+                // Team Explorer (from vsshlids.h)
+                { new Guid("3f5a3e02-af62-4c13-8d8a-a568ecae238b"), "Visual Studio (Team Explorer)" },   // guidTeamExplorerSharedCmdSet
+                // Designer package (from vsshlids.h)
+                { new Guid("8d8529d3-625d-4496-8354-3dad630ecc1b"), "Visual Studio (Designer)" },        // guid_VSDesignerPackage
+                // VDT Flavor commands (from vsshlids.h)
+                { new Guid("462b036f-7349-4835-9e21-bec60e989b9c"), "Visual Studio (VDT Flavor)" },      // guidVDTFlavorCmdSet
+                // Reference Manager (from vsshlids.h)
+                { new Guid("7b069159-ff02-4752-93e8-96b3cadf441a"), "Visual Studio (Reference Manager)" }, // guidReferenceManagerProvidersPackageCmdSet
+                // Universal Projects (from ShellCmdDef.vsct)
+                { new Guid("04b4dc54-4183-44e7-b353-61424e7d2dab"), "Visual Studio (Universal Projects)" }, // guidUniversalProjectsCmdSet
+                // Project retargeting (from ShellCmdDef.vsct)
+                { new Guid("284b5e45-1ff9-40b1-9ccf-92319a47c39b"), "Visual Studio (Project Retargeting)" }, // guidTrackProjectRetargetingCmdSet
+            };
         }
 
         private struct CommandKey : IEquatable<CommandKey>

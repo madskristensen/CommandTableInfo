@@ -38,6 +38,8 @@
 				<CommandFlag>IconIsMoniker</CommandFlag>
 				<Strings>
 					<ButtonText>Command Explorer</ButtonText>
+					<CanonicalName>.View.CommandExplorer</CanonicalName>
+					<LocCanonicalName>.View.CommandExplorer</LocCanonicalName>
 				</Strings>
 			</Button>
 
@@ -50,6 +52,7 @@
 				<Strings>
 					<ButtonText>Copy</ButtonText>
 					<LocCanonicalName>.CommandExplorer.CopyContextValue</LocCanonicalName>
+					<CanonicalName>.CommandExplorer.CopyContextValue</CanonicalName>
 				</Strings>
 			</Button>
 
@@ -62,6 +65,7 @@
 				<Strings>
 					<ButtonText>Copy</ButtonText>
 					<LocCanonicalName>.CommandExplorer.CopyNodeValue</LocCanonicalName>
+					<CanonicalName>.CommandExplorer.CopyNodeValue</CanonicalName>
 				</Strings>
 			</Button>
 
@@ -74,6 +78,7 @@
 				<Strings>
 					<ButtonText>Copy VSCT Guid/ID symbols</ButtonText>
 					<LocCanonicalName>.CommandExplorer.CopyVsctSymbols</LocCanonicalName>
+					<CanonicalName>.CommandExplorer.CopyVsctSymbols</CanonicalName>
 				</Strings>
 			</Button>
 		</Buttons>
