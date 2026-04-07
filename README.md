@@ -1,6 +1,7 @@
 # Command Explorer
 
 [![Build](https://github.com/madskristensen/CommandTableInfo/actions/workflows/build.yaml/badge.svg)](https://github.com/madskristensen/CommandTableInfo/actions/workflows/build.yaml)
+[![GitHub Sponsors](https://img.shields.io/github/sponsors/madskristensen)](https://github.com/sponsors/madskristensen)
 
 > **The essential tool for Visual Studio extension authors.** Explore every command, menu, toolbar, and key binding in Visual Studio — and find the exact GUIDs, IDs, and placement hierarchy you need for your `.vsct` files.
 

@@ -14,7 +14,7 @@ namespace CommandTableInfo
         public const string Language = "en-US";
         public const string Version = "1.2";
         public const string Author = "Mads Kristensen";
-        public const string Tags = "vsix, extensibility, commands, menus, toolbars, vsct, command table, groups";
+        public const string Tags = "vsix, extensibility, commands, menus, toolbars, vsct";
         public const bool IsPreview = false;
     }
 }
