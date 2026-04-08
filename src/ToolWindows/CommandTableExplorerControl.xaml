@@ -72,6 +72,100 @@
                 </Trigger>
             </Style.Triggers>
         </Style>
+
+        <Style x:Key="FluentCheckBoxStyle" TargetType="CheckBox">
+            <Setter Property="Foreground" Value="{DynamicResource {x:Static platformui:CommonControlsColors.CheckBoxTextBrushKey}}" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="CheckBox">
+                        <BulletDecorator SnapsToDevicePixels="True">
+                            <BulletDecorator.Bullet>
+                                <Border x:Name="CheckBorder"
+                                        Width="16" Height="16"
+                                        CornerRadius="3"
+                                        BorderThickness="1"
+                                        BorderBrush="{DynamicResource {x:Static platformui:CommonControlsColors.CheckBoxBorderBrushKey}}"
+                                        Background="{DynamicResource {x:Static platformui:CommonControlsColors.CheckBoxBackgroundBrushKey}}">
+                                    <Path x:Name="CheckMark"
+                                          Width="10" Height="8"
+                                          Stretch="Uniform"
+                                          Data="M 0,4.5 L 3.5,8 L 10,0.5"
+                                          Stroke="White"
+                                          StrokeThickness="1.5"
+                                          StrokeStartLineCap="Round"
+                                          StrokeEndLineCap="Round"
+                                          StrokeLineJoin="Round"
+                                          Visibility="Collapsed" />
+                                </Border>
+                            </BulletDecorator.Bullet>
+                            <ContentPresenter Margin="{TemplateBinding Padding}"
+                                              VerticalAlignment="Center"
+                                              RecognizesAccessKey="True" />
+                        </BulletDecorator>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="CheckMark" Property="Visibility" Value="Visible" />
+                                <Setter TargetName="CheckBorder" Property="Background"
+                                        Value="{DynamicResource {x:Static platformui:EnvironmentColors.AccentDarkBrushKey}}" />
+                                <Setter TargetName="CheckBorder" Property="BorderBrush"
+                                        Value="{DynamicResource {x:Static platformui:EnvironmentColors.AccentDarkBrushKey}}" />
+                            </Trigger>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsMouseOver" Value="True" />
+                                    <Condition Property="IsChecked" Value="False" />
+                                </MultiTrigger.Conditions>
+                                <Setter TargetName="CheckBorder" Property="BorderBrush"
+                                        Value="{DynamicResource {x:Static platformui:CommonControlsColors.CheckBoxBorderHoverBrushKey}}" />
+                                <Setter TargetName="CheckBorder" Property="Background"
+                                        Value="{DynamicResource {x:Static platformui:CommonControlsColors.CheckBoxBackgroundHoverBrushKey}}" />
+                            </MultiTrigger>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsMouseOver" Value="True" />
+                                    <Condition Property="IsChecked" Value="True" />
+                                </MultiTrigger.Conditions>
+                                <Setter TargetName="CheckBorder" Property="Background"
+                                        Value="{DynamicResource {x:Static platformui:EnvironmentColors.AccentMediumBrushKey}}" />
+                                <Setter TargetName="CheckBorder" Property="BorderBrush"
+                                        Value="{DynamicResource {x:Static platformui:EnvironmentColors.AccentMediumBrushKey}}" />
+                            </MultiTrigger>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsPressed" Value="True" />
+                                    <Condition Property="IsChecked" Value="False" />
+                                </MultiTrigger.Conditions>
+                                <Setter TargetName="CheckBorder" Property="BorderBrush"
+                                        Value="{DynamicResource {x:Static platformui:CommonControlsColors.CheckBoxBorderPressedBrushKey}}" />
+                                <Setter TargetName="CheckBorder" Property="Background"
+                                        Value="{DynamicResource {x:Static platformui:CommonControlsColors.CheckBoxBackgroundPressedBrushKey}}" />
+                            </MultiTrigger>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsPressed" Value="True" />
+                                    <Condition Property="IsChecked" Value="True" />
+                                </MultiTrigger.Conditions>
+                                <Setter TargetName="CheckBorder" Property="Background"
+                                        Value="{DynamicResource {x:Static platformui:EnvironmentColors.AccentDarkBrushKey}}" />
+                                <Setter TargetName="CheckBorder" Property="BorderBrush"
+                                        Value="{DynamicResource {x:Static platformui:EnvironmentColors.AccentDarkBrushKey}}" />
+                            </MultiTrigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="CheckBorder" Property="BorderBrush"
+                                        Value="{DynamicResource {x:Static platformui:CommonControlsColors.CheckBoxBorderDisabledBrushKey}}" />
+                                <Setter TargetName="CheckBorder" Property="Background"
+                                        Value="{DynamicResource {x:Static platformui:CommonControlsColors.CheckBoxBackgroundDisabledBrushKey}}" />
+                                <Setter TargetName="CheckMark" Property="Stroke"
+                                        Value="{DynamicResource {x:Static platformui:CommonControlsColors.CheckBoxGlyphDisabledBrushKey}}" />
+                                <Setter Property="Foreground"
+                                        Value="{DynamicResource {x:Static platformui:CommonControlsColors.CheckBoxTextDisabledBrushKey}}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </UserControl.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
@@ -96,7 +190,7 @@
                         Margin="0"
                         Padding="4,0"
                         BorderThickness="1"
-                        CornerRadius="2"
+                        CornerRadius="4"
                         BorderBrush="{DynamicResource {x:Static platformui:EnvironmentColors.ToolWindowBorderBrushKey}}"
                         Background="{DynamicResource {x:Static platformui:EnvironmentColors.ToolWindowBackgroundBrushKey}}">
                     <Grid>
@@ -122,16 +216,24 @@
 
                 <CheckBox Name="cbInspect" Grid.Column="1"
                           Content="Inspect mode"
+                          Style="{StaticResource FluentCheckBoxStyle}"
                           VerticalContentAlignment="Center" VerticalAlignment="Center"
                           Margin="10,0,0,0"
-                          Padding="3, 0, 0, 0"
+                          Padding="6, 0, 0, 0"
                           Unchecked="CheckBox_Checked" Checked="CheckBox_Checked"/>
             </Grid>
 
-            <ListView Name="list" Grid.Row="1" Margin="6,0,6,6" ItemsSource="{Binding Commands}"
+            <Border Grid.Row="1" Margin="6,0,6,6"
+                    CornerRadius="4"
+                    BorderThickness="1"
+                    BorderBrush="{DynamicResource {x:Static platformui:EnvironmentColors.ToolWindowBorderBrushKey}}"
+                    Background="{DynamicResource {x:Static platformui:EnvironmentColors.ToolWindowBackgroundBrushKey}}">
+            <ListView Name="list" ItemsSource="{Binding Commands}"
                       SelectionChanged="OnSelectionChanged"
                       ItemContainerStyle="{StaticResource CommandListItemStyle}"
                       SelectionMode="Single"
+                      BorderThickness="0"
+                      Background="Transparent"
                       ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                       VirtualizingPanel.VirtualizationMode="Recycling"
                       VirtualizingPanel.IsVirtualizing="True">
@@ -142,10 +244,11 @@
                     </DataTemplate>
                 </ListView.ItemTemplate>
             </ListView>
+            </Border>
         </Grid>
 
         <GridSplitter Grid.Column="1"
-                      Width="5"
+                      Width="3"
                       HorizontalAlignment="Stretch"
                       Background="{DynamicResource {x:Static platformui:EnvironmentColors.ToolWindowBorderBrushKey}}"
                       ShowsPreview="True"
@@ -237,7 +340,7 @@
                             Padding="4"
                             BorderThickness="1"
                             BorderBrush="{DynamicResource {x:Static platformui:EnvironmentColors.ToolWindowBorderBrushKey}}"
-                            CornerRadius="2"
+                            CornerRadius="4"
                             Background="{DynamicResource {x:Static platformui:EnvironmentColors.ToolWindowBackgroundBrushKey}}">
                         <TreeView Name="treeHierarchy"
                                   MinHeight="120"
