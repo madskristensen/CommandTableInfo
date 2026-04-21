@@ -22,6 +22,11 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>source.extension.vsixmanifest</DependentUpon>
     </Compile>
+    <Compile Update="VSCommandTable.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>VSCommandTable.vsct</DependentUpon>
+    </Compile>
   </ItemGroup>
 
   <!-- VSCT command table -->
