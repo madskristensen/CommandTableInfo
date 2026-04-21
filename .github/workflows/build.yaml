@@ -82,7 +82,7 @@ jobs:
       - name: Tag and release
         if: ${{ github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[release]') }}
         id: tag_release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           body: release ${{ needs.build.outputs.version }}
           generate_release_notes: true
