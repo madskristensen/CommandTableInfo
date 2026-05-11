@@ -186,7 +186,7 @@ namespace CommandTableInfo.Services
             {
                 var path = new List<HierarchyNode>
                 {
-                    new HierarchyNode(commandBar.Name, null, null)
+                    new HierarchyNode(commandBar.Name, null, null, GetCommandBarKind(commandBar))
                 };
 
                 TraverseControlsForIndex(commandBar.Controls, path);
@@ -533,30 +533,85 @@ namespace CommandTableInfo.Services
                 caption = control.Type.ToString();
             }
 
+            NodeKind kind = GetControlKind(control);
+
             try
             {
                 _commands.CommandInfo(control, out string guid, out int id);
 
                 if (Guid.TryParse(guid, out Guid parsedGuid))
                 {
-                    return new HierarchyNode(caption, parsedGuid, id);
+                    return new HierarchyNode(caption, parsedGuid, id, kind);
                 }
             }
             catch
             {
             }
 
-            return new HierarchyNode(caption, null, null);
+            return new HierarchyNode(caption, null, null, kind);
+        }
+
+        private static NodeKind GetCommandBarKind(CommandBar commandBar)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+
+            try
+            {
+                // MsoBarType: 0 = Normal (toolbar), 1 = MenuBar, 2 = Popup (context menu)
+                switch ((int)commandBar.Type)
+                {
+                    case 0: return NodeKind.Toolbar;
+                    case 1: return NodeKind.MenuBar;
+                    case 2: return NodeKind.ContextMenu;
+                }
+            }
+            catch
+            {
+            }
+
+            return NodeKind.CommandBar;
+        }
+
+        private static NodeKind GetControlKind(CommandBarControl control)
+        {
+            if (control is CommandBarPopup)
+            {
+                return NodeKind.Menu;
+            }
+
+            if (control is CommandBarButton)
+            {
+                return NodeKind.Command;
+            }
+
+            return NodeKind.Other;
         }
 
         private static string FormatNode(HierarchyNode node)
         {
+            string prefix = GetKindPrefix(node.Kind);
+
             if (!node.Guid.HasValue || !node.Id.HasValue)
             {
-                return node.Label;
+                return prefix + node.Label;
             }
 
-            return string.Format(CultureInfo.InvariantCulture, "{0} ({1}:{2})", node.Label, node.Guid.Value, FormatId(node.Id.Value));
+            return string.Format(CultureInfo.InvariantCulture, "{0}{1} ({2}:{3})", prefix, node.Label, node.Guid.Value, FormatId(node.Id.Value));
+        }
+
+        private static string GetKindPrefix(NodeKind kind)
+        {
+            switch (kind)
+            {
+                case NodeKind.ContextMenu: return "[Context Menu] ";
+                case NodeKind.MenuBar: return "[Menu Bar] ";
+                case NodeKind.Toolbar: return "[Toolbar] ";
+                case NodeKind.CommandBar: return "[CommandBar] ";
+                case NodeKind.Menu: return "[Menu] ";
+                case NodeKind.Command: return "[Command] ";
+                case NodeKind.Other: return "[Item] ";
+                default: return string.Empty;
+            }
         }
 
         private static string FormatId(int id)
@@ -691,13 +746,25 @@ namespace CommandTableInfo.Services
             }
         }
 
+        private enum NodeKind
+        {
+            CommandBar,
+            ContextMenu,
+            MenuBar,
+            Toolbar,
+            Menu,
+            Command,
+            Other,
+        }
+
         private sealed class HierarchyNode
         {
-            public HierarchyNode(string label, Guid? guid, int? id)
+            public HierarchyNode(string label, Guid? guid, int? id, NodeKind kind)
             {
                 Label = label;
                 Guid = guid;
                 Id = id;
+                Kind = kind;
             }
 
             public string Label { get; }
@@ -705,6 +772,8 @@ namespace CommandTableInfo.Services
             public Guid? Guid { get; }
 
             public int? Id { get; }
+
+            public NodeKind Kind { get; }
         }
 
         private sealed class HierarchyAccumulator
